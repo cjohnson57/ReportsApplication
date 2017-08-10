@@ -119,18 +119,6 @@ Public Class Form1
     Private Sub ConnectAndFillSQL(count As Integer, i As Integer, query As String, cn As SqlConnection, datasetnames As String(), filename As String)
         Dim cmd = New SqlCommand(query, cn) 'Sets the sql command
 
-        If (adomdparams) Then 'If there are parameters, adds them to the report
-            For l As Integer = 0 To (countparamsadomd - 1) 'This loop queries the data base for the parameter table, then sets it based on the user's entered value
-                If (adomdparamconnectionstrings(l) = "NODATASET") Then
-                    Dim p As New AdomdParameter(paramvaradomd(l), paramadomd(l))
-                    cmd.Parameters.Add(p)
-                Else
-                    Dim p As New AdomdParameter(paramvaradomd(l), adomdqueryvalues(l))
-                    cmd.Parameters.Add(p)
-                End If
-            Next
-        End If
-
         If (sqlparams) Then 'If there are parameters, adds them to the command using the parameters found in the SetParameters function
             For l As Integer = 0 To (countparamssql - 1)
                 If (l = 0) Then
@@ -177,16 +165,6 @@ Public Class Form1
                 Else
                     Dim p As New AdomdParameter(paramvaradomd(l), adomdqueryvalues(l))
                     cmd.Parameters.Add(p)
-                End If
-            Next
-        End If
-
-        If (sqlparams) Then 'If there are parameters, adds them to the command using the parameters found in the SetParameters function
-            For l As Integer = 0 To (countparamssql - 1)
-                If (l = 0) Then
-                    cmd.Parameters.Add(paramvarsql(l), paramsql(l))
-                ElseIf (CheckArray(paramvarsql, paramvarsql(l), l)) Then
-                    cmd.Parameters.Add(paramvarsql(l), paramsql(l))
                 End If
             Next
         End If
@@ -371,8 +349,6 @@ Public Class Form1
                     adomdbutnodataset = False
                     paramdataset = item2.Value
                     paramdatasets.Add(paramdataset)
-                    'adomdparams = True
-                    'SetParametersAdomd(datasourcenames, connectionstrings, numdatasources, paramdataset, paramvar)
                     If ((String.Compare(paramdataset, "YearDataSet", True) = 0)) Then
                         yeardatasetnotset = True
                         For l As Integer = 0 To (countparamsadomd - 1)
@@ -491,7 +467,9 @@ Public Class Form1
                     End If
                     If (tempcount >= countparamsadomd) Then
                         paramvaradomd.RemoveAt(paramvaradomd.Count - 1)
-                        paramcommands.RemoveAt(paramvaradomd.Count - 1)
+                        adomdparamconnectionstrings.RemoveAt(adomdparamconnectionstrings.Count - 1)
+                        paramdatasets.RemoveAt(paramdatasets.Count - 1)
+                        paramcommands.RemoveAt(paramcommands.Count - 1)
                     End If
                 End If
             Next

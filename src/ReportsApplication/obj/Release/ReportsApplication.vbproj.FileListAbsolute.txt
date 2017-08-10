@@ -48,6 +48,7 @@ C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\Report
 C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\bin\Release\Microsoft.Build.Framework.dll
 C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\bin\Release\VSLangProj2.dll
 C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\bin\Release\Microsoft.VisualStudio.TemplateWizardInterface.xml
+C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\obj\Release\ReportsApplication.vbprojResolveAssemblyReference.cache
 C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\obj\Release\ReportsApplication.Form1.resources
 C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\obj\Release\ReportsApplication.Form2.resources
 C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\obj\Release\ReportsApplication.Form3.resources
