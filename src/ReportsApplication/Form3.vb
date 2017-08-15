@@ -9,8 +9,8 @@ Public Class Form3
         Dim cmd = New AdomdCommand(paramcommands(countparamsadomd), cn)
         Dim tbl = New DataTable
 
-        If (adomdparams) Then 'If there are parameters, adds them to the report
-            For l As Integer = 0 To (countparamsadomd - 1) 'This loop queries the data base for the parameter table, then sets it based on the user's entered value
+        If (adomdparams) Then 'If there are parameters, adds them to the query
+            For l As Integer = 0 To (countparamsadomd - 1)
                 If (adomdparamconnectionstrings(l) = "NODATASET") Then
                     Dim p As New AdomdParameter(paramvaradomd(l), paramadomd(l))
                     cmd.Parameters.Add(p)
@@ -22,6 +22,7 @@ Public Class Form3
         End If
 
         da.SelectCommand = cmd
+
         Try
             cn.Open()
             da.Fill(tbl)
@@ -35,11 +36,19 @@ Public Class Form3
             End If
         End Try
         Dim firstset As Boolean = True
+        Dim j As Integer = 0
+        For i As Integer = 0 To (tbl.Columns.Count - 1)
+            If tbl.Columns(i).ColumnName.Contains("ParameterCaption") Then
+                j = i
+                Exit For
+            End If
+        Next
+
         For i As Integer = 0 To (tbl.Rows.Count - 1)
-            If (tbl.Rows(i).ItemArray(1).ToString <> "All") Then
-                ComboBox1.Items.Add(tbl.Rows(i).ItemArray(1))
+            If (tbl.Rows(i).ItemArray(j).ToString <> "All") Then
+                ComboBox1.Items.Add(tbl.Rows(i).ItemArray(j))
                 If firstset Then
-                    ComboBox1.Text = tbl.Rows(i).ItemArray(1)
+                    ComboBox1.Text = tbl.Rows(i).ItemArray(j)
                     firstset = False
                 End If
             End If

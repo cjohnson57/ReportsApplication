@@ -53,7 +53,7 @@
           <Paragraph>
             <TextRuns>
               <TextRun>
-                <Value>The application may not render data correctly if your report fields don't use standard MDX naming.</Value>
+                <Value>The application may not render data correctly if your report fields don't use standard MDX naming or if it has a query that uses a select non empty statement.</Value>
                 <Style>
                   <FontSize>12pt</FontSize>
                 </Style>
@@ -86,7 +86,7 @@
           <Paragraph>
             <TextRuns>
               <TextRun>
-                <Value>You can choose to set the value of a parameter for each report or set it once for all reports with the check box.</Value>
+                <Value>    You can choose to set the value of a parameter for each report individually in the export options.</Value>
                 <Style>
                   <FontSize>12pt</FontSize>
                 </Style>
@@ -97,7 +97,7 @@
           <Paragraph>
             <TextRuns>
               <TextRun>
-                <Value>You can also choose to combine rendered reports into one, but this feature only works when exporting PDFs.</Value>
+                <Value>    You can choose to combine rendered reports into one, but this feature only works when exporting PDFs.</Value>
                 <Style>
                   <FontSize>12pt</FontSize>
                 </Style>
@@ -108,7 +108,7 @@
           <Paragraph>
             <TextRuns>
               <TextRun>
-                <Value>    (Thanks to PDFsharp for providing this functionality)</Value>
+                <Value>        (Thanks to PDFsharp for providing this functionality)</Value>
                 <Style>
                   <FontSize>12pt</FontSize>
                 </Style>
@@ -119,7 +119,7 @@
           <Paragraph>
             <TextRuns>
               <TextRun>
-                <Value>You can also choose, when combining multiple PDFs into one, to only render the first page of each report. This is useful if you have single-page reports that export as multiple pages due to formatting errors.</Value>
+                <Value>        You can also choose, when combining multiple PDFs into one, to only render the first page of each report. This is           useful if you have single-page reports that export as multiple pages due to formatting errors.</Value>
                 <Style>
                   <FontSize>12pt</FontSize>
                 </Style>
@@ -129,9 +129,8 @@
           </Paragraph>
         </Paragraphs>
         <rd:DefaultName>Textbox1</rd:DefaultName>
-        <Top>0.34375in</Top>
         <Left>0.03125in</Left>
-        <Height>2.31944in</Height>
+        <Height>2.76389in</Height>
         <Width>8.54166in</Width>
         <Style>
           <Border>
@@ -147,7 +146,7 @@
         <Source>Embedded</Source>
         <Value>hsrglogo_sqaure</Value>
         <Sizing>FitProportional</Sizing>
-        <Top>2.67708in</Top>
+        <Top>3.17708in</Top>
         <Left>1.8125in</Left>
         <Height>4.875in</Height>
         <Width>4.94792in</Width>
@@ -159,7 +158,7 @@
         </Style>
       </Image>
     </ReportItems>
-    <Height>7.67708in</Height>
+    <Height>8.05208in</Height>
     <Style />
   </Body>
   <Width>8.57291in</Width>

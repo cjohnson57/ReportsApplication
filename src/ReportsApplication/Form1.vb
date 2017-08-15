@@ -129,6 +129,16 @@ Public Class Form1
             Next
         End If
 
+        If (adomdparams) Then 'If there are parameters, adds them to the report
+            For l As Integer = 0 To (countparamsadomd - 1)
+                If (adomdparamconnectionstrings(l) = "NODATASET") Then
+                    cmd.Parameters.AddWithValue(paramvaradomd(l), paramadomd(l))
+                Else
+                    cmd.Parameters.AddWithValue(paramvaradomd(l), adomdqueryvalues(l))
+                End If
+            Next
+        End If
+
         Dim da = New SqlDataAdapter(cmd) 'Sets the data adapter
         Dim tbl = New DataTable()
 
@@ -157,8 +167,20 @@ Public Class Form1
         Dim cmd = New AdomdCommand(query, cn) 'Sets the command
         Dim tbl = New DataTable
 
+        If (sqlparams) Then 'If there are parameters, adds them to the command using the parameters found in the SetParameters function
+            For l As Integer = 0 To (countparamssql - 1)
+                If (l = 0) Then
+                    Dim p As New AdomdParameter(paramvarsql(l), paramsql(l))
+                    cmd.Parameters.Add(p)
+                ElseIf (CheckArray(paramvarsql, paramvarsql(l), l)) Then
+                    Dim p As New AdomdParameter(paramvarsql(l), paramsql(l))
+                    cmd.Parameters.Add(p)
+                End If
+            Next
+        End If
+
         If (adomdparams) Then 'If there are parameters, adds them to the report
-            For l As Integer = 0 To (countparamsadomd - 1) 'This loop queries the data base for the parameter table, then sets it based on the user's entered value
+            For l As Integer = 0 To (countparamsadomd - 1)
                 If (adomdparamconnectionstrings(l) = "NODATASET") Then
                     Dim p As New AdomdParameter(paramvaradomd(l), paramadomd(l))
                     cmd.Parameters.Add(p)
@@ -337,6 +359,7 @@ Public Class Form1
         Dim issql As Boolean = True
         Dim adomdbutnodataset As Boolean = True
         Dim yeardatasetnotset = True
+        Dim HSRG As Boolean = False
 
         Dim Namespce As XNamespace = "http://schemas.microsoft.com/sqlserver/reporting/2010/01/reportdefinition"
         For Each item In report.Root.Descendants(Namespce + "ReportParameter") 'Goes through the xml to find the data sets that are actually parameters to get their names and queries
@@ -349,22 +372,13 @@ Public Class Form1
                     adomdbutnodataset = False
                     paramdataset = item2.Value
                     paramdatasets.Add(paramdataset)
-                    If ((String.Compare(paramdataset, "YearDataSet", True) = 0)) Then
-                        yeardatasetnotset = True
-                        For l As Integer = 0 To (countparamsadomd - 1)
-                            If (paramvaradomd(l) = "DateYear") Then
-                                paramvarsql.Add("Year")
-                                paramsql.Add(paramadomd(l))
-                                countparamssql += 1
-                                yeardatasetnotset = False
-                                sqlparams = True
-                            End If
-                        Next
-                        If (yeardatasetnotset) Then
-                            sqlparams = True
-                            SetParametersSQL(paramvar)
+                    For i As Integer = 0 To numdatasources - 1
+                        If datasourcenames(i) = "CRSHDWHSRG" Then
+                            HSRG = True
+                            Exit For
                         End If
-                    Else
+                    Next
+                    If (False) Then
                         If ((String.Compare(paramdataset, "YearDataSet", True) = 0)) Then
                             yeardatasetnotset = True
                             For l As Integer = 0 To (countparamsadomd - 1)
@@ -381,9 +395,29 @@ Public Class Form1
                                 SetParametersSQL(paramvar)
                             End If
                         Else
-                            adomdparams = True
-                            SetParametersAdomd(datasourcenames, connectionstrings, numdatasources, paramdataset, paramvar, filename)
+                            If ((String.Compare(paramdataset, "YearDataSet", True) = 0)) Then
+                                yeardatasetnotset = True
+                                For l As Integer = 0 To (countparamsadomd - 1)
+                                    If (paramvaradomd(l) = "DateYear") Then
+                                        paramvarsql.Add("Year")
+                                        paramsql.Add(paramadomd(l))
+                                        countparamssql += 1
+                                        yeardatasetnotset = False
+                                        sqlparams = True
+                                    End If
+                                Next
+                                If (yeardatasetnotset) Then
+                                    sqlparams = True
+                                    SetParametersSQL(paramvar)
+                                End If
+                            Else
+                                adomdparams = True
+                                SetParametersAdomd(datasourcenames, connectionstrings, numdatasources, paramdataset, paramvar, filename)
+                            End If
                         End If
+                    Else
+                        adomdparams = True
+                        SetParametersAdomd(datasourcenames, connectionstrings, numdatasources, paramdataset, paramvar, filename)
                     End If
                 Next
                 If (adomdbutnodataset) Then
@@ -677,7 +711,7 @@ Public Class Form1
                 ClearGlobalVariables()
                 DeleteFilesFromFolder()
                 If (wereerrors) Then
-                    Dim response = MsgBox("Reports finished rendering." + Environment.NewLine + "There were errors during rendering. Would you like to view them?", MsgBoxStyle.YesNo)
+                    Dim response = MsgBox("Reports finished rendering." + Environment.NewLine + "There were " + errormessages.Count().ToString() + " errors during rendering. Would you like to view them?", MsgBoxStyle.YesNo)
                     If response = MsgBoxResult.Yes Then
                         For i As Integer = 0 To (errormessages.Count - 1)
                             MsgBox(errormessages(i))
