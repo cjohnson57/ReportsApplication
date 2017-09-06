@@ -92,7 +92,7 @@ Partial Class Form1
         Me.MenuStrip1.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.ExportToolStripMenuItem, Me.ExportOptionsToolStripMenuItem})
         Me.MenuStrip1.Location = New System.Drawing.Point(550, 1)
         Me.MenuStrip1.Name = "MenuStrip1"
-        Me.MenuStrip1.Size = New System.Drawing.Size(249, 24)
+        Me.MenuStrip1.Size = New System.Drawing.Size(157, 24)
         Me.MenuStrip1.TabIndex = 9
         Me.MenuStrip1.Text = "MenuStrip1"
         '

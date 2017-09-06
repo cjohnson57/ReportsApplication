@@ -1,7 +1,7 @@
 ﻿Imports ReportsApplication.Form1.GlobalVariables
 
 Public Class Form4
-    Private Sub Form3_Load(sender As Object, e As EventArgs) Handles MyBase.Load 'Loads a table based on the parameter data set's query, in order to populate the combo box
+    Private Sub Form3_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         Label1.Text = "Enter the value for parameter " + paramvaradomd(countparamsadomd).Replace("@", "")
         Dim firstset As Boolean = True
         For i As Integer = 0 To (adomdvalues.Count - 1)

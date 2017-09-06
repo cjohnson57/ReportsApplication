@@ -20,9 +20,7 @@ Public Class Form3
                 End If
             Next
         End If
-
         da.SelectCommand = cmd
-
         Try
             cn.Open()
             da.Fill(tbl)
@@ -35,6 +33,7 @@ Public Class Form3
                 MsgBox("Error in connection for parameter " + paramvaradomd(countparamsadomd).Replace("@", "") + "'s dataset in report " + filenametemp + Environment.NewLine + ex.Message)
             End If
         End Try
+
         Dim firstset As Boolean = True
         Dim j As Integer = 0
         For i As Integer = 0 To (tbl.Columns.Count - 1)
@@ -46,9 +45,9 @@ Public Class Form3
 
         For i As Integer = 0 To (tbl.Rows.Count - 1)
             If (tbl.Rows(i).ItemArray(j).ToString <> "All") Then
-                ComboBox1.Items.Add(tbl.Rows(i).ItemArray(j))
+                ComboBox1.Items.Add(tbl.Rows(i).ItemArray(j).ToString())
                 If firstset Then
-                    ComboBox1.Text = tbl.Rows(i).ItemArray(j)
+                    ComboBox1.Text = tbl.Rows(i).ItemArray(j).ToString()
                     firstset = False
                 End If
             End If
@@ -83,7 +82,6 @@ Public Class Form3
                 End If
             Next
         End If
-
         da.SelectCommand = cmd
         Try
             cn.Open()
@@ -98,8 +96,13 @@ Public Class Form3
             End If
         End Try
         Try
-            tbl.Columns(1).ColumnName = "ParameterCaption"
-            tbl.Columns(2).ColumnName = "ParameterValue"
+            For i As Integer = 0 To tbl.Columns.Count - 1
+                If tbl.Columns(i).ColumnName.Contains("ParameterCaption") Then
+                    tbl.Columns(i).ColumnName = "ParameterCaption"
+                ElseIf tbl.Columns(i).ColumnName.Contains("ParameterValue") Then
+                    tbl.Columns(i).ColumnName = "ParameterValue"
+                End If
+            Next
             Dim row As DataRow = tbl.Select("ParameterCaption = '" + paramadomd(countparamsadomd) + "'").FirstOrDefault()
             Dim value As String
             value = row.Item("ParameterValue")
