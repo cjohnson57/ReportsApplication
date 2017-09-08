@@ -107,6 +107,7 @@ Public Class Form1
 
     Private Sub ConnectAndFillSQL(count As Integer, i As Integer, query As String, cn As SqlConnection, datasetnames As String(), filename As String)
         Dim cmd = New SqlCommand(query, cn) 'Sets the sql command using the query
+        cmd.CommandTimeout = 120
 
         If (sqlparams) Then 'If there are parameters, adds them to the command using the parameters found in the SetParameters function
             For l As Integer = 0 To (countparamssql - 1)
@@ -156,6 +157,7 @@ Public Class Form1
         Dim da As AdomdDataAdapter = New AdomdDataAdapter()
         Dim cmd = New AdomdCommand(query, cn) 'Sets the command
         Dim tbl = New DataTable
+        cmd.CommandTimeout = 120
 
         If (sqlparams) Then 'It's possible for an AS connection to use SQL parameters, so they too must be added
             For l As Integer = 0 To (countparamssql - 1)
