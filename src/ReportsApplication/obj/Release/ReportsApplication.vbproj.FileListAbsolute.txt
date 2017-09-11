@@ -92,6 +92,8 @@ C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\Report
 C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\bin\Release\zh-CHT\Microsoft.ReportViewer.WinForms.resources.dll
 C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\bin\Release\zh-HANS\Microsoft.ReportViewer.WinForms.resources.dll
 C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\bin\Release\zh-HANT\Microsoft.ReportViewer.WinForms.resources.dll
+C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\obj\Release\ReportsApplication.vbprojResolveAssemblyReference.cache
+C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\obj\Release\ReportsApplication.vbproj.ReportsApplication.exe.config
 C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\obj\Release\ReportsApplication.Form1.resources
 C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\obj\Release\ReportsApplication.Form2.resources
 C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\obj\Release\ReportsApplication.Form3.resources
