@@ -258,6 +258,8 @@ Public Class Form1
         report.Save(filename) 'Saves the new, changed report and switches the report to it
         ReportViewer1.LocalReport.ReportPath = filename
 
+        SetParameterDataTypes()
+
         If (sqlparams) Then 'If there are sql parameters, adds them to the report (they have to be added to the report separately from the dataset)
             For l As Integer = 0 To (countparamssql - 1)
                 For Each item In report.Root.Descendants(NS + "ReportParameter") 'Goes through the xml to find the data sets that are actually parameters to get their names and queries
@@ -296,7 +298,7 @@ Public Class Form1
                             fileReader = My.Computer.FileSystem.ReadAllText(ReportViewer1.LocalReport.ReportPath) 'Reads the report's xml data
                             'Adds a parameter for each adomd parameter. This is because adomd parameters in report builder have two values, their value and their label (x.value and x.label). Here, adomd parameters are not that complex. So it makes one parameter for the value and one for the label. Then replaces all references to x.label with xname.value
                             fileReader = fileReader.Insert((fileReader.IndexOf("</ReportParameters>")), "<ReportParameter Name=""" + paramvaradomd(m) + "Name"">
-                                <DataType>String</DataType>
+                                <DataType>" + adomddatatypes(m) + "</DataType>
                                   <DefaultValue>
                                     <Values>
                                       <Value>" + paramadomd(m) + "</Value>
@@ -305,6 +307,7 @@ Public Class Form1
                               </ReportParameter>
                             ")
                             fileReader = fileReader.Replace("Parameters!" + paramvaradomd(m) + ".Label", "Parameters!" + paramvaradomd(m) + "Name.Value")
+                            'Microsoft's 2016 report builder added a section for parameter layouts. Despite the application not using these, they must exist for each parameter. So this block adds one to the number of columns, then adds the required information for the parameter
                             If fileReader.Contains("<ReportParametersLayout>") Then
                                 Dim i1 As Integer = fileReader.IndexOf("<NumberOfColumns>") + 17
                                 Dim i2 As Integer = fileReader.IndexOf("<", i1)
@@ -318,23 +321,24 @@ Public Class Form1
                             </CellDefinition>
                             ")
                             End If
+
                             My.Computer.FileSystem.DeleteFile(ReportViewer1.LocalReport.ReportPath) 'Deletes and rewrites the report with its new values
-                                My.Computer.FileSystem.WriteAllText(ReportViewer1.LocalReport.ReportPath, fileReader, True)
-                                Try 'During testing this was a common place for errors. Not because of the parameters, but because if you try to add parameters to a report which has a bad definition, it will give an error.
-                                    ReportViewer1.LocalReport.SetParameters(p)
-                                Catch ex As Exception
-                                    If (renderingmultiple) Then
-                                        wereerrors = True
-                                        errormessages.Add(ex.Message + Environment.NewLine + "Error in report definition.")
-                                    Else
-                                        Dim response = MsgBox(ex.Message + Environment.NewLine + "Error in report definition." + Environment.NewLine + Environment.NewLine + "Would you like to see more information?", MsgBoxStyle.YesNo)
-                                        If response = MsgBoxResult.Yes Then
-                                            MsgBox(ex.InnerException.InnerException.Message)
-                                        End If
+                            My.Computer.FileSystem.WriteAllText(ReportViewer1.LocalReport.ReportPath, fileReader, True)
+                            Try 'During testing this was a common place for errors. Not because of the parameters, but because if you try to add parameters to a report which has a bad definition, it will give an error.
+                                ReportViewer1.LocalReport.SetParameters(p)
+                            Catch ex As Exception
+                                If (renderingmultiple) Then
+                                    wereerrors = True
+                                    errormessages.Add(ex.Message + Environment.NewLine + "Error in report definition.")
+                                Else
+                                    Dim response = MsgBox(ex.Message + Environment.NewLine + "Error in report definition." + Environment.NewLine + Environment.NewLine + "Would you like to see more information?", MsgBoxStyle.YesNo)
+                                    If response = MsgBoxResult.Yes Then
+                                        MsgBox(ex.InnerException.InnerException.Message)
                                     End If
-                                End Try
-                            End If
+                                End If
+                            End Try
                         End If
+                    End If
                 Next
             Next
         End If
@@ -362,6 +366,7 @@ Public Class Form1
         Dim report = XDocument.Load(ReportViewer1.LocalReport.ReportPath) 'This xml file is a copy of the original report
         Dim paramdataset As String
         Dim paramvar As String
+        Dim datatype As String
         Dim issql As Boolean = True
         Dim adomdbutnodataset As Boolean = True
         Dim yeardatasetnotset = True
@@ -371,6 +376,10 @@ Public Class Form1
             paramvar = item.FirstAttribute.Value
             issql = True
             adomdbutnodataset = True
+            datatype = "String" 'String is the default value
+            For Each item4 In item.Descendants(NS + "DataType")
+                datatype = item4.Value
+            Next
             For Each item3 In item.Descendants(NS + "ValidValues") 'Checks each parameter to see if it's AS or SQL, then runs the appropriate function. If it's a yeardataset parameter, takes the value from DateYear
                 issql = False
                 For Each item2 In item3.Descendants(NS + "DataSetName")
@@ -397,7 +406,7 @@ Public Class Form1
                             Next
                             If (yeardatasetnotset) Then
                                 sqlparams = True
-                                SetParametersSQL(paramvar)
+                                SetParametersSQL(paramvar, datatype)
                             End If
                         Else
                             If ((String.Compare(paramdataset, "YearDataSet", True) = 0)) Then
@@ -413,36 +422,37 @@ Public Class Form1
                                 Next
                                 If (yeardatasetnotset) Then
                                     sqlparams = True
-                                    SetParametersSQL(paramvar)
+                                    SetParametersSQL(paramvar, datatype)
                                 End If
                             Else
                                 adomdparams = True
-                                SetParametersAdomd(datasourcenames, connectionstrings, numdatasources, paramdataset, paramvar, filename)
+                                SetParametersAdomd(datasourcenames, connectionstrings, numdatasources, paramdataset, paramvar, filename, datatype)
                             End If
                         End If
                     Else
                         adomdparams = True
-                        SetParametersAdomd(datasourcenames, connectionstrings, numdatasources, paramdataset, paramvar, filename)
+                        SetParametersAdomd(datasourcenames, connectionstrings, numdatasources, paramdataset, paramvar, filename, datatype)
                     End If
                 Next
                 If (adomdbutnodataset) Then 'This is for the case where there is an ADOMD parameter that uses a list of values rather than a data set
                     For Each item2 In item3.Descendants(NS + "Label")
                         adomdvalues.Add(item2.Value)
                     Next
-                    SetParametersAdomd(datasourcenames, connectionstrings, numdatasources, "adomdbutnodataset", paramvar, filename)
+                    SetParametersAdomd(datasourcenames, connectionstrings, numdatasources, "adomdbutnodataset", paramvar, filename, datatype)
                     adomdvalues.Clear()
                 End If
             Next
             If (issql) Then
                 sqlparams = True
-                SetParametersSQL(paramvar)
+                SetParametersSQL(paramvar, datatype)
             End If
         Next
     End Sub
 
-    Private Sub SetParametersSQL(paramvar As String)
+    Private Sub SetParametersSQL(paramvar As String, datatype As String)
         Dim tempcount As Integer = countparamssql 'Saves the original value of countparamssql
         paramvarsql.Add(paramvar) 'Adds the parameter before incrementing countparamssql
+        sqldatatypes.Add(datatype)
         If countparamssql = 0 Then 'If there are no parameters currently just adds it. Otherwise checks to make sure the parameter doesn't already exist.
             Dim frm2 As Form2 = New Form2
             frm2.ShowDialog() 'Opens the 2nd form used for setting the parameter
@@ -453,14 +463,16 @@ Public Class Form1
             countparamssql += 1
         End If
         If (tempcount >= countparamssql) Then 'If countparamssql was not incremented, then that parameter must have already existed, so it removes the copy
-            paramvarsql.RemoveAt(paramvaradomd.Count - 1)
+            paramvarsql.RemoveAt(paramvarsql.Count - 1)
+            sqldatatypes.RemoveAt(sqldatatypes.Count - 1)
         End If
     End Sub
 
-    Private Sub SetParametersAdomd(datasourcenames As String(), connectionstrings As String(), numdatasources As Integer, paramdataset As String, paramvar As String, filename As String)
+    Private Sub SetParametersAdomd(datasourcenames As String(), connectionstrings As String(), numdatasources As Integer, paramdataset As String, paramvar As String, filename As String, datatype As String)
         Dim report = XDocument.Load(ReportViewer1.LocalReport.ReportPath) 'This xml file is a copy of the original report
         If (paramdataset = "adomdbutnodataset") Then 'For the case where there is no dataset and the parameter uses a list instead.
             paramvaradomd.Add(paramvar)
+            adomddatatypes.Add(datatype)
             adomdparamconnectionstrings.Add("NODATASET") 'Since it uses no data set
             If countparamsadomd = 0 Then
                 Dim frm4 As Form4 = New Form4
@@ -476,6 +488,8 @@ Public Class Form1
                 If (item.FirstAttribute.Value = paramdataset) Then
                     Dim tempcount As Integer = countparamsadomd 'Saves the original value of countparamsadomd
                     paramvaradomd.Add(paramvar) 'Adds the parameter before incrementing countparamsadomd
+                    adomddatatypes.Add(datatype)
+
                     Dim fileReader As String
                     fileReader = My.Computer.FileSystem.ReadAllText(ReportViewer1.LocalReport.ReportPath) 'Reads the report's xml data
                     Dim i As Integer = fileReader.IndexOf("<DataSet Name=""" + paramdataset)
@@ -506,12 +520,47 @@ Public Class Form1
                     If (tempcount >= countparamsadomd) Then 'If countparamsadomd was not incremented, then that parameter must have already existed, so it removes the copy and all its attributes
                         paramvaradomd.RemoveAt(paramvaradomd.Count - 1)
                         adomdparamconnectionstrings.RemoveAt(adomdparamconnectionstrings.Count - 1)
+                        adomddatatypes.RemoveAt(adomddatatypes.Count - 1)
                         paramdatasets.RemoveAt(paramdatasets.Count - 1)
                         paramcommands.RemoveAt(paramcommands.Count - 1)
                     End If
                 End If
             Next
         End If
+    End Sub
+
+    Private Sub SetParameterDataTypes()
+        Dim fileReader As String
+        fileReader = My.Computer.FileSystem.ReadAllText(ReportViewer1.LocalReport.ReportPath) 'Reads the report's xml data
+        Dim report = XDocument.Load(ReportViewer1.LocalReport.ReportPath) 'This xml file is a copy of the original report
+
+        If (sqlparams) Then 'If there are sql parameters, adds them to the report (they have to be added to the report separately from the dataset)
+            For l As Integer = 0 To (countparamssql - 1)
+                For Each item In report.Root.Descendants(NS + "ReportParameter") 'Goes through the xml to find the data sets that are actually parameters to get their names and queries
+                    If (item.FirstAttribute.Value = paramvarsql(l)) Then
+                        'Now the default data type of string for the original parameter must be changed 
+                        Dim datatypeindex = fileReader.IndexOf("<ReportParameter Name=""" + paramvarsql(l) + """>")
+                        fileReader = Replace(fileReader, "<DataType>String</DataType>", "<DataType>" + sqldatatypes(l) + "</DataType>", datatypeindex, 1)
+                    End If
+                Next
+            Next
+        End If
+        Dim m As Integer = 0
+
+        If (adomdparams) Then 'If there are adomd parameters, adds them to the report (they have to be added to the report separately from the dataset)
+            For Each item In report.Root.Descendants(NS + "ReportParameter") 'Goes through the xml to find the data sets that are actually parameters to get their names and queries
+                For m = 0 To (countparamsadomd - 1)
+                    If (item.FirstAttribute.Value = paramvaradomd(m)) Then
+                        Dim datatypeindex As Integer = fileReader.IndexOf("<ReportParameter Name=""" + paramvaradomd(m))
+                        fileReader = Replace(fileReader, "<DataType>String</DataType>", "<DataType>" + adomddatatypes(m) + "</DataType>", datatypeindex, 1)
+                    End If
+                Next
+            Next
+        End If
+
+        My.Computer.FileSystem.DeleteFile(ReportViewer1.LocalReport.ReportPath) 'Deletes and rewrites the report with its new values
+        My.Computer.FileSystem.WriteAllText(ReportViewer1.LocalReport.ReportPath, fileReader, True)
+
     End Sub
 
     Private Function NumTimes(stringtofind As String, stringtosearch As String) 'Finds the number of times a string occurs in the report
@@ -561,7 +610,7 @@ Public Class Form1
 
     Private Function ReplaceEscapeCharacters(finaloutcome As String)
         Dim chars = New String() {"'", "&", ">", "<"}
-        Dim escs = New String() {" &apos;", "&amp;", "&gt;", "&lt;"}
+        Dim escs = New String() {"&apos;", "&amp;", "&gt;", "&lt;"}
         For i As Integer = 0 To (escs.Length - 1)
             finaloutcome = finaloutcome.Replace(escs(i), chars(i)) 'Replaces escape characters with their normal characters
         Next
@@ -592,6 +641,7 @@ Public Class Form1
         Public Shared paramvarsql As New List(Of String)
         Public Shared countparamssql As Integer = 0
         Public Shared sqlparams As Boolean = False
+        Public Shared sqldatatypes As New List(Of String)
         'Variables for Adomd parameters
         Public Shared paramadomd As New List(Of String)
         Public Shared paramvaradomd As New List(Of String)
@@ -602,6 +652,7 @@ Public Class Form1
         Public Shared paramdatasets As New List(Of String)
         Public Shared countparamsadomd As Integer = 0
         Public Shared adomdparams As Boolean = False
+        Public Shared adomddatatypes As New List(Of String)
         'Variable for rendering multiple reports into one PDF
         Public Shared combinedfilename
         'Variable for the namespace of the report
@@ -647,7 +698,7 @@ Public Class Form1
         Next
     End Sub
 
-    Private Sub FindNameSpace(report As String)
+    Private Sub FindNameSpace(report As String) 'Finds the namespace of the report, which depends on what version of Microsoft's report builder the report was made in
         Dim i1 As Integer = report.IndexOf("xmlns=") + 7
         Dim i2 As Integer = report.IndexOf("""", i1)
         NS = report.Substring(i1, i2 - i1)
