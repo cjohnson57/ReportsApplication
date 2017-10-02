@@ -260,6 +260,9 @@ Public Class Form1
 
         SetParameterDataTypes()
 
+        report.Save(filename) 'Saves the new, changed report and switches the report to it
+        ReportViewer1.LocalReport.ReportPath = filename
+
         If (sqlparams) Then 'If there are sql parameters, adds them to the report (they have to be added to the report separately from the dataset)
             For l As Integer = 0 To (countparamssql - 1)
                 For Each item In report.Root.Descendants(NS + "ReportParameter") 'Goes through the xml to find the data sets that are actually parameters to get their names and queries
@@ -274,7 +277,7 @@ Public Class Form1
                             Else
                                 Dim response = MsgBox(ex.Message + Environment.NewLine + "Error in report definition." + Environment.NewLine + Environment.NewLine + "Would you like to see more information?", MsgBoxStyle.YesNo)
                                 If response = MsgBoxResult.Yes Then
-                                    MsgBox(ex.InnerException.InnerException.Message)
+                                    MsgBox(ex.InnerException.Message)
                                 End If
                             End If
                         End Try
@@ -453,14 +456,26 @@ Public Class Form1
         Dim tempcount As Integer = countparamssql 'Saves the original value of countparamssql
         paramvarsql.Add(paramvar) 'Adds the parameter before incrementing countparamssql
         sqldatatypes.Add(datatype)
-        If countparamssql = 0 Then 'If there are no parameters currently just adds it. Otherwise checks to make sure the parameter doesn't already exist.
-            Dim frm2 As Form2 = New Form2
-            frm2.ShowDialog() 'Opens the 2nd form used for setting the parameter
-            countparamssql += 1
-        ElseIf (CheckArray(paramvarsql, paramvarsql(countparamssql), countparamssql)) Then
-            Dim frm2 As Form2 = New Form2
-            frm2.ShowDialog() 'Opens the 2nd form used for setting the parameter
-            countparamssql += 1
+        If (datatype = "DateTime") Then 'Checks if the parameter is datetime or not, since it requires a different form with a datetime picker
+            If countparamssql = 0 Then 'If there are no parameters currently just adds it. Otherwise checks to make sure the parameter doesn't already exist.
+                Dim frm6 As Form6 = New Form6
+                frm6.ShowDialog() 'Opens the 2nd form used for setting the parameter
+                countparamssql += 1
+            ElseIf (CheckArray(paramvarsql, paramvarsql(countparamssql), countparamssql)) Then
+                Dim frm6 As Form6 = New Form6
+                frm6.ShowDialog() 'Opens the 2nd form used for setting the parameter
+                countparamssql += 1
+            End If
+        Else
+            If countparamssql = 0 Then 'If there are no parameters currently just adds it. Otherwise checks to make sure the parameter doesn't already exist.
+                Dim frm2 As Form2 = New Form2
+                frm2.ShowDialog() 'Opens the 2nd form used for setting the parameter
+                countparamssql += 1
+            ElseIf (CheckArray(paramvarsql, paramvarsql(countparamssql), countparamssql)) Then
+                Dim frm2 As Form2 = New Form2
+                frm2.ShowDialog() 'Opens the 2nd form used for setting the parameter
+                countparamssql += 1
+            End If
         End If
         If (tempcount >= countparamssql) Then 'If countparamssql was not incremented, then that parameter must have already existed, so it removes the copy
             paramvarsql.RemoveAt(paramvarsql.Count - 1)
@@ -540,7 +555,9 @@ Public Class Form1
                     If (item.FirstAttribute.Value = paramvarsql(l)) Then
                         'Now the default data type of string for the original parameter must be changed 
                         Dim datatypeindex = fileReader.IndexOf("<ReportParameter Name=""" + paramvarsql(l) + """>")
-                        fileReader = Replace(fileReader, "<DataType>String</DataType>", "<DataType>" + sqldatatypes(l) + "</DataType>", datatypeindex, 1)
+                        Dim fileReadertemp1 As String = Replace(fileReader, "<DataType>String</DataType>", "<DataType>" + sqldatatypes(l) + "</DataType>", datatypeindex, 1)
+                        Dim fileReadertemp2 As String = fileReader.Substring(datatypeindex)
+                        fileReader = fileReader.Replace(fileReadertemp2, fileReadertemp1)
                     End If
                 Next
             Next
@@ -552,7 +569,9 @@ Public Class Form1
                 For m = 0 To (countparamsadomd - 1)
                     If (item.FirstAttribute.Value = paramvaradomd(m)) Then
                         Dim datatypeindex As Integer = fileReader.IndexOf("<ReportParameter Name=""" + paramvaradomd(m))
-                        fileReader = Replace(fileReader, "<DataType>String</DataType>", "<DataType>" + adomddatatypes(m) + "</DataType>", datatypeindex, 1)
+                        Dim fileReadertemp1 = Replace(fileReader, "<DataType>String</DataType>", "<DataType>" + adomddatatypes(m) + "</DataType>", datatypeindex, 1)
+                        Dim fileReadertemp2 As String = fileReader.Substring(datatypeindex)
+                        fileReader = fileReader.Replace(fileReadertemp2, fileReadertemp1)
                     End If
                 Next
             Next
