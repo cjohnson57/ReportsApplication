@@ -115,7 +115,7 @@ Public Class Form3
 
     Private Function ReplaceEscapeCharacters(finaloutcome As String)
         Dim chars = New String() {"'", "&", ">", "<"}
-        Dim escs = New String() {" &apos;", "&amp;", "&gt;", "&lt;"}
+        Dim escs = New String() {"&apos;", "&amp;", "&gt;", "&lt;"}
         For i As Integer = 0 To (escs.Length - 1)
             finaloutcome = finaloutcome.Replace(escs(i), chars(i)) 'Replaces escape characters with their normal characters
         Next

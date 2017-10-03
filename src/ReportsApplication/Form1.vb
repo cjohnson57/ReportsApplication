@@ -102,14 +102,15 @@ Public Class Form1
         End While
 
         ReplaceFields(filename) 'Replaces fields, required for AS reports 
+
         If (Not saveparameters) Then 'Clears variables unless rendering multiple reports
             ClearGlobalVariables()
         End If
     End Sub
 
     Private Sub ConnectAndFillSQL(count As Integer, i As Integer, query As String, cn As SqlConnection, datasetnames As String(), filename As String)
-        Dim cmd = New SqlCommand(query, cn) 'Sets the sql command using the query
-        cmd.CommandTimeout = 120
+
+        Dim cmd = New SqlCommand(query, cn) With {.CommandTimeout = 120} 'Sets the sql command using the query
 
         If (sqlparams) Then 'If there are parameters, adds them to the command using the parameters found in the SetParameters function
             For l As Integer = 0 To (countparamssql - 1)
@@ -156,10 +157,10 @@ Public Class Form1
     End Sub
 
     Private Sub ConnectAndFillAdomd(count As Integer, i As Integer, query As String, cn As AdomdConnection, datasetnames As String(), filename As String)
+
         Dim da As AdomdDataAdapter = New AdomdDataAdapter()
-        Dim cmd = New AdomdCommand(query, cn) 'Sets the command
+        Dim cmd = New AdomdCommand(query, cn) With {.CommandTimeout = 120} 'Sets the command
         Dim tbl = New DataTable
-        cmd.CommandTimeout = 120
 
         If (sqlparams) Then 'It's possible for an AS connection to use SQL parameters, so they too must be added
             For l As Integer = 0 To (countparamssql - 1)
@@ -683,20 +684,22 @@ Public Class Form1
     End Class
 
     Private Sub ClearGlobalVariables() 'Clears all the global variables
-        countparamssql = 0
-        countparamsadomd = 0
-        NS = ""
         paramsql.Clear()
         paramvarsql.Clear()
+        countparamssql = 0
+        sqlparams = False
+        sqldatatypes.Clear()
         paramadomd.Clear()
         paramvaradomd.Clear()
         adomdvalues.Clear()
-        paramdatasets.Clear()
+        adomdparamconnectionstrings.Clear()
         paramcommands.Clear()
         adomdqueryvalues.Clear()
-        adomdparamconnectionstrings.Clear()
+        paramdatasets.Clear()
+        countparamsadomd = 0
         adomdparams = False
-        sqlparams = False
+        adomddatatypes.Clear()
+        NS = ""
     End Sub
 
     Private Function CheckArray(arr As List(Of String), value As String, count As Integer) 'Makes sure the parameter is not one that has already been assigned
@@ -790,9 +793,11 @@ Public Class Form1
 
                     filenum += 1
                 Next
+
                 combinedfilename = ""
                 ClearGlobalVariables()
                 DeleteFilesFromFolder()
+
                 If (wereerrors) Then
                     Dim response = MsgBox("Reports finished rendering." + Environment.NewLine + "There were " + errormessages.Count().ToString() + " errors during rendering." + Environment.NewLine + "These may or may not have affected the outcome of your reports." + Environment.NewLine + "Would you like to view the errors?", MsgBoxStyle.YesNo)
                     If response = MsgBoxResult.Yes Then
@@ -803,11 +808,11 @@ Public Class Form1
                 Else
                     MsgBox("Reports finished rendering.")
                 End If
+
                 renderingmultiple = False
                 wereerrors = False
                 errormessages.Clear()
             End If
         End If
     End Sub
-
 End Class

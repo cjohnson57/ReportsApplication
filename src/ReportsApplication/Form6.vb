@@ -1,7 +1,7 @@
 ﻿Imports ReportsApplication.Form1.GlobalVariables
 
 Public Class Form6
-    Private Sub Form2_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+    Private Sub Form6_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         Label1.Text = "Enter the value for parameter " + paramvarsql(countparamssql)
     End Sub
 
