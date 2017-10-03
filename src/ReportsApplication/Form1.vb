@@ -258,14 +258,14 @@ Public Class Form1
         report.Save(filename) 'Saves the new, changed report and switches the report to it
         ReportViewer1.LocalReport.ReportPath = filename
 
-        SetParameterDataTypes()
+        SetParameterDataTypes() 'Changes the parameters to use the datatype specified in the original report, since parameters added with code are type string by default
 
         report.Save(filename) 'Saves the new, changed report and switches the report to it
         ReportViewer1.LocalReport.ReportPath = filename
 
         If (sqlparams) Then 'If there are sql parameters, adds them to the report (they have to be added to the report separately from the dataset)
             For l As Integer = 0 To (countparamssql - 1)
-                For Each item In report.Root.Descendants(NS + "ReportParameter") 'Goes through the xml to find the data sets that are actually parameters to get their names and queries
+                For Each item In report.Root.Descendants(NS + "ReportParameter")
                     If (item.FirstAttribute.Value = paramvarsql(l)) Then
                         Dim p As New ReportParameter(paramvarsql(l), paramsql(l))
                         Try 'During testing this was a common place for errors. Not because of the parameters, but because if you try to add parameters to a report which has a bad definition, it will give an error.
@@ -289,7 +289,7 @@ Public Class Form1
         Dim m As Integer = 0
 
         If (adomdparams) Then 'If there are adomd parameters, adds them to the report (they have to be added to the report separately from the dataset)
-            For Each item In report.Root.Descendants(NS + "ReportParameter") 'Goes through the xml to find the data sets that are actually parameters to get their names and queries
+            For Each item In report.Root.Descendants(NS + "ReportParameter")
                 For m = 0 To (countparamsadomd - 1)
                     If (item.FirstAttribute.Value = paramvaradomd(m)) Then
                         If (adomdparamconnectionstrings(m) = "NODATASET") Then
@@ -549,14 +549,13 @@ Public Class Form1
         fileReader = My.Computer.FileSystem.ReadAllText(ReportViewer1.LocalReport.ReportPath) 'Reads the report's xml data
         Dim report = XDocument.Load(ReportViewer1.LocalReport.ReportPath) 'This xml file is a copy of the original report
 
-        If (sqlparams) Then 'If there are sql parameters, adds them to the report (they have to be added to the report separately from the dataset)
+        If (sqlparams) Then 'If there are sql parameters, changes their data type to what it should be
             For l As Integer = 0 To (countparamssql - 1)
-                For Each item In report.Root.Descendants(NS + "ReportParameter") 'Goes through the xml to find the data sets that are actually parameters to get their names and queries
+                For Each item In report.Root.Descendants(NS + "ReportParameter")
                     If (item.FirstAttribute.Value = paramvarsql(l)) Then
-                        'Now the default data type of string for the original parameter must be changed 
                         Dim datatypeindex = fileReader.IndexOf("<ReportParameter Name=""" + paramvarsql(l) + """>")
                         Dim fileReadertemp1 As String = Replace(fileReader, "<DataType>String</DataType>", "<DataType>" + sqldatatypes(l) + "</DataType>", datatypeindex, 1)
-                        Dim fileReadertemp2 As String = fileReader.Substring(datatypeindex)
+                        Dim fileReadertemp2 As String = fileReader.Substring(datatypeindex) 'This is necessary because the above line, using the Replace method, will start at the datatypeindex (which is required) and cuts out everything before it. So instead of setting filereader equal to it, the original part of the report starting at that index is replaced by the new one.
                         fileReader = fileReader.Replace(fileReadertemp2, fileReadertemp1)
                     End If
                 Next
@@ -564,13 +563,13 @@ Public Class Form1
         End If
         Dim m As Integer = 0
 
-        If (adomdparams) Then 'If there are adomd parameters, adds them to the report (they have to be added to the report separately from the dataset)
-            For Each item In report.Root.Descendants(NS + "ReportParameter") 'Goes through the xml to find the data sets that are actually parameters to get their names and queries
+        If (adomdparams) Then 'If there are adomd parameters, changes their data type to what it should be
+            For Each item In report.Root.Descendants(NS + "ReportParameter")
                 For m = 0 To (countparamsadomd - 1)
                     If (item.FirstAttribute.Value = paramvaradomd(m)) Then
                         Dim datatypeindex As Integer = fileReader.IndexOf("<ReportParameter Name=""" + paramvaradomd(m))
                         Dim fileReadertemp1 = Replace(fileReader, "<DataType>String</DataType>", "<DataType>" + adomddatatypes(m) + "</DataType>", datatypeindex, 1)
-                        Dim fileReadertemp2 As String = fileReader.Substring(datatypeindex)
+                        Dim fileReadertemp2 As String = fileReader.Substring(datatypeindex)  'This is necessary because the above line, using the Replace method, will start at the datatypeindex (which is required) and cuts out everything before it. So instead of setting filereader equal to it, the original part of the report starting at that index is replaced by the new one.
                         fileReader = fileReader.Replace(fileReadertemp2, fileReadertemp1)
                     End If
                 Next
