@@ -53,7 +53,7 @@
           <Paragraph>
             <TextRuns>
               <TextRun>
-                <Value>The application may not render data correctly if your report fields don't use standard MDX naming or if it has a query that uses a select non empty statement.</Value>
+                <Value>The application may not render data correctly if your report fields don't use standard MDX naming, it has a query that uses a select non empty statement, or your column names/aliases are keywords.</Value>
                 <Style>
                   <FontSize>12pt</FontSize>
                 </Style>

@@ -1,21 +1,21 @@
 ﻿Imports ReportsApplication.Form1.GlobalVariables
-Imports Microsoft.AnalysisServices.AdomdClient
+Imports System.Data.SqlClient
 
-Public Class Form3
-    Private Sub Form3_Load(sender As Object, e As EventArgs) Handles MyBase.Load 'Loads a table based on the parameter data set's query, in order to populate the combo box
-        Label1.Text = "Enter the value for parameter " + paramvaradomd(countparamsadomd).Replace("@", "")
-        Dim cn = New AdomdConnection(adomdparamconnectionstrings(countparamsadomd))
-        Dim da As AdomdDataAdapter = New AdomdDataAdapter()
-        Dim cmd = New AdomdCommand(adomdparamcommands(countparamsadomd), cn)
+Public Class Form7
+    Private Sub Form7_Load(sender As Object, e As EventArgs) Handles MyBase.Load 'Loads a table based on the parameter data set's query, in order to populate the combo box
+        Label1.Text = "Enter the value for parameter " + paramvarsql(countparamssql).Replace("@", "")
+        Dim cn = New SqlConnection(sqlparamconnectionstrings(countparamssql))
+        Dim da As SqlDataAdapter = New SqlDataAdapter()
+        Dim cmd = New SqlCommand(sqlparamcommands(countparamssql), cn)
         Dim tbl = New DataTable
 
-        If (adomdparams) Then 'If there are parameters, adds them to the query
-            For l As Integer = 0 To (countparamsadomd - 1)
-                If (adomdparamconnectionstrings(l) = "NODATASET") Then
-                    Dim p As New AdomdParameter(paramvaradomd(l), paramadomd(l))
+        If (sqlparams) Then 'If there are parameters, adds them to the query
+            For l As Integer = 0 To (countparamssql - 1)
+                If (sqlparamconnectionstrings(l) = "NODATASET") Then
+                    Dim p As New SqlParameter(paramvarsql(l), paramsql(l))
                     cmd.Parameters.Add(p)
                 Else
-                    Dim p As New AdomdParameter(paramvaradomd(l), adomdqueryvalues(l))
+                    Dim p As New SqlParameter(paramvarsql(l), sqlqueryvalues(l))
                     cmd.Parameters.Add(p)
                 End If
             Next
@@ -28,9 +28,9 @@ Public Class Form3
         Catch ex As Exception
             If (renderingmultiple) Then
                 wereerrors = True
-                errormessages.Add("Error in connection for parameter " + paramvaradomd(countparamsadomd).Replace("@", "") + "'s dataset in report " + filenametemp + Environment.NewLine + ex.Message)
+                errormessages.Add("Error in connection for parameter " + paramvarsql(countparamssql).Replace("@", "") + "'s dataset in report " + filenametemp + Environment.NewLine + ex.Message)
             Else
-                MsgBox("Error in connection for parameter " + paramvaradomd(countparamsadomd).Replace("@", "") + "'s dataset in report " + filenametemp + Environment.NewLine + ex.Message)
+                MsgBox("Error in connection for parameter " + paramvarsql(countparamssql).Replace("@", "") + "'s dataset in report " + filenametemp + Environment.NewLine + ex.Message)
             End If
         End Try
 
@@ -53,31 +53,31 @@ Public Class Form3
             End If
         Next
         If ComboBox1.Items.Count = 1 Then
-            paramadomd.Add(ComboBox1.Items(0).ToString)
+            paramsql.Add(ComboBox1.Items(0).ToString)
             FindValue()
             Close()
         End If
     End Sub
 
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
-        paramadomd.Add(ComboBox1.Text) 'Gets the parameter from the combo box
+        paramsql.Add(ComboBox1.Text) 'Gets the parameter from the combo box
         FindValue()
         Close()
     End Sub
 
     Private Sub FindValue()
-        Dim cn = New AdomdConnection(adomdparamconnectionstrings(countparamsadomd))
-        Dim da As AdomdDataAdapter = New AdomdDataAdapter()
-        Dim cmd = New AdomdCommand(adomdparamcommands(countparamsadomd), cn)
+        Dim cn = New SqlConnection(sqlparamconnectionstrings(countparamssql))
+        Dim da As SqlDataAdapter = New SqlDataAdapter()
+        Dim cmd = New SqlCommand(sqlparamcommands(countparamssql), cn)
         Dim tbl = New DataTable
 
-        If (adomdparams) Then 'If there are parameters, adds them to the report
-            For l As Integer = 0 To (countparamsadomd - 1) 'This loop queries the data base for the parameter table, then sets it based on the user's entered value
-                If (adomdparamconnectionstrings(l) = "NODATASET") Then
-                    Dim p As New AdomdParameter(paramvaradomd(l), paramadomd(l))
+        If (sqlparams) Then 'If there are parameters, adds them to the report
+            For l As Integer = 0 To (countparamssql - 1) 'This loop queries the data base for the parameter table, then sets it based on the user's entered value
+                If (sqlparamconnectionstrings(l) = "NODATASET") Then
+                    Dim p As New SqlParameter(paramvarsql(l), paramsql(l))
                     cmd.Parameters.Add(p)
                 Else
-                    Dim p As New AdomdParameter(paramvaradomd(l), adomdqueryvalues(l))
+                    Dim p As New SqlParameter(paramvarsql(l), sqlqueryvalues(l))
                     cmd.Parameters.Add(p)
                 End If
             Next
@@ -90,9 +90,9 @@ Public Class Form3
         Catch ex As Exception
             If (renderingmultiple) Then
                 wereerrors = True
-                errormessages.Add("Error in connection for parameter " + paramvaradomd(countparamsadomd).Replace("@", "") + "'s dataset in report " + filenametemp + Environment.NewLine + ex.Message)
+                errormessages.Add("Error in connection for parameter " + paramvarsql(countparamssql).Replace("@", "") + "'s dataset in report " + filenametemp + Environment.NewLine + ex.Message)
             Else
-                MsgBox("Error in connection for parameter " + paramvaradomd(countparamsadomd).Replace("@", "") + "'s dataset in report " + filenametemp + Environment.NewLine + ex.Message)
+                MsgBox("Error in connection for parameter " + paramvarsql(countparamssql).Replace("@", "") + "'s dataset in report " + filenametemp + Environment.NewLine + ex.Message)
             End If
         End Try
         Try
@@ -103,13 +103,13 @@ Public Class Form3
                     tbl.Columns(i).ColumnName = "ParameterValue"
                 End If
             Next
-            Dim row As DataRow = tbl.Select("ParameterCaption = '" + paramadomd(countparamsadomd) + "'").FirstOrDefault()
+            Dim row As DataRow = tbl.Select("ParameterCaption = '" + paramsql(countparamssql) + "'").FirstOrDefault()
             Dim value As String
             value = row.Item("ParameterValue")
             value = ReplaceEscapeCharacters(value)
-            adomdqueryvalues.Add(value)
+            sqlqueryvalues.Add(value)
         Catch ex As Exception
-            adomdqueryvalues.Add(paramadomd(countparamsadomd))
+            sqlqueryvalues.Add(paramsql(countparamssql))
         End Try
     End Sub
 
