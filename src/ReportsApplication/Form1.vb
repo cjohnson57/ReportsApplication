@@ -43,6 +43,7 @@ Public Class Form1
         Dim isanalysisdatasources(numdatasources - 1) As Boolean 'An array used to determine if each datasource in datasources is analysis services
         Dim isanalysisdatasets(numdatasets - 1) As Boolean 'An array used to determine if each dataset's datasource is analysis services
         Dim datasetsdatasource(numdatasets - 1) As Integer 'An array that stores which data source a data set uses
+        Dim datasetqueries(numdatasets - 1) As String 'An array for data set queries
 
         FindNameSpace(filereaderdatasets)
 
@@ -76,6 +77,7 @@ Public Class Form1
             i = filereaderdatasets.IndexOf("<DataSet Name", i + 1) 'This block finds which data source the dataset is using, so it knows which connection string to use
             currentdatasourcename = FindDataSourceName(i, False)
             datasetnames(k) = FindDataSetName(i)
+            datasetqueries(k) = FindString("<CommandText", "</CommandText", i)
             For j As Integer = 0 To (numdatasources - 1)
                 If (currentdatasourcename = datasourcenames(j)) Then
                     isanalysisdatasets(k) = isanalysisdatasources(j)
@@ -88,18 +90,16 @@ Public Class Form1
 
         While count < numdatasets 'This while loop iterates once for each dataset, since each dataset has to be set and filled individually
 
-            query = FindString("<CommandText", "</CommandText", i) 'Records the xml data of the query
-
             If (isanalysisdatasets(count)) Then 'Checks whether or not the data source uses analysis services
                 connectionstrings(datasetsdatasource(count)) = connectionstrings(datasetsdatasource(count)).Replace(";Integrated Security=True", "") 'Removes integrated security, since it doesn't work with AS
 
                 Dim cn = New AdomdConnection(connectionstrings(datasetsdatasource(count))) 'Sets the connection using the connection string found in the last block
 
-                ConnectAndFillAdomd(count, query, cn, datasetnames, filename) 'Connects to the data source and fills the data set
+                ConnectAndFillAdomd(count, datasetqueries(count), cn, datasetnames, filename) 'Connects to the data source and fills the data set
             Else
                 Dim cn = New SqlConnection(connectionstrings(datasetsdatasource(count))) 'Sets the connection using the connection string found in the last block
 
-                ConnectAndFillSQL(count, query, cn, datasetnames, filename) 'Connects to the data source and fills the data set
+                ConnectAndFillSQL(count, datasetqueries(count), cn, datasetnames, filename) 'Connects to the data source and fills the data set
             End If
 
             count += 1
@@ -507,9 +507,6 @@ Public Class Form1
                 For j As Integer = 0 To (numdatasources - 1) 'Gets the connection string for the parameter data set
                     If (currentdatasourcename = datasourcenames(j)) Then
                         sqlparamconnectionstrings.Add(connectionstrings(j))
-                        If (sqlparamconnectionstrings(countparamssql).Contains("Integrated Security")) Then 'Takes away integrated security since it doesn't work with AS connection strings
-                            sqlparamconnectionstrings(countparamssql) = sqlparamconnectionstrings(countparamssql).Replace(";Integrated Security=True", "")
-                        End If
                         Exit For
                     End If
                 Next
