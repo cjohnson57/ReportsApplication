@@ -21,7 +21,6 @@ Public Class Form1
         Public Query As String
         Public DataSource As String
     End Structure
-
     Public Structure Datasource
         Public Name As String
         Public IsAnalysis As Boolean
@@ -395,12 +394,14 @@ Public Class Form1
         Dim datatype As String
         Dim issql As Boolean = True
         Dim adomdbutnodataset As Boolean = True
+        Dim alreadyset As Boolean = False
         'Dim yeardatasetnotset = True
         'Dim HSRG As Boolean = False
 
         For Each item In report.Root.Descendants(NS + "ReportParameter") 'Goes through the xml to find the data sets that are actually parameters to get their names and queries
             paramvar = item.FirstAttribute.Value
             adomdbutnodataset = True
+            alreadyset = False
             datatype = "String" 'String is the default value
             For Each item4 In item.Descendants(NS + "DataType")
                 datatype = item4.Value
@@ -458,6 +459,7 @@ Public Class Form1
                     If (Not issql) Then
                         SetParametersAdomd(DataSets, paramdataset, paramvar, filename, datatype)
                     ElseIf (issql) Then
+                        alreadyset = True
                         SetParametersSQLQuery(DataSets, paramdataset, paramvar, filename, datatype)
                     End If
                 Next
@@ -469,7 +471,7 @@ Public Class Form1
                     adomdvalues.Clear()
                 End If
             Next
-            If (issql) Then
+            If (issql And (Not alreadyset)) Then
                 SetParametersSQL(paramvar, datatype)
             End If
         Next
