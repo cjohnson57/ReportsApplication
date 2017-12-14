@@ -26,7 +26,7 @@ Public Class Form1
         Public IsAnalysis As Boolean
         Public ConnectionString As String
     End Structure
-    Public Structure ParameterSQL
+    Public Structure ParameterSQL 'I know the SQL and Adomd structs are exactly the same, but I do this to make sure I don't accidentally add a parameter to the wrong list.
         Public Parameter As String
         Public ParamVar As String
         Public ConnectionString As String
@@ -34,6 +34,8 @@ Public Class Form1
         Public QueryValues As String
         Public Dataset As String
         Public DataType As String
+        Public ValueField As String
+        Public LabelField As String
     End Structure
     Public Structure ParameterAdomd
         Public Parameter As String
@@ -43,6 +45,8 @@ Public Class Form1
         Public QueryValues As String
         Public Dataset As String
         Public DataType As String
+        Public ValueField As String
+        Public LabelField As String
     End Structure
 
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
@@ -187,13 +191,8 @@ Public Class Form1
 
         If (SQLParameters.Count > 0) Then 'It's possible for an AS connection to use SQL parameters, so they too must be added
             For l As Integer = 0 To (SQLParameters.Count - 1)
-                If (l = 0) Then
-                    Dim p As New AdomdParameter(SQLParameters(l).ParamVar, SQLParameters(l).Parameter)
-                    cmd.Parameters.Add(p)
-                ElseIf (CheckArray("SQL", SQLParameters(l).ParamVar, l)) Then
-                    Dim p As New AdomdParameter(SQLParameters(l).ParamVar, SQLParameters(l).Parameter)
-                    cmd.Parameters.Add(p)
-                End If
+                Dim p As New AdomdParameter(SQLParameters(l).ParamVar, SQLParameters(l).Parameter)
+                cmd.Parameters.Add(p)
             Next
         End If
 
@@ -369,7 +368,7 @@ Public Class Form1
         End If
     End Sub
 
-    Private Function ValueCheckFunction(valuecheck As String) 'Converts the name of the column to how it should be using MDX naming.
+    Public Function ValueCheckFunction(valuecheck As String) 'Converts the name of the column to how it should be using MDX naming.
         If (valuecheck.Contains("[Measures].[") And (NumTimes("]", valuecheck) = 2)) Then
             valuecheck = valuecheck.Replace("[Measures].[", "")
             valuecheck = valuecheck.Replace("]", "")
@@ -383,6 +382,10 @@ Public Class Form1
             EndPos = valuecheck.IndexOf("]", StartPos)
             valuecheck = valuecheck.Substring(StartPos + 1, EndPos - StartPos - 1)
             valuecheck = ReplaceWithUnderscores(valuecheck)
+        ElseIf (valuecheck.Contains("&")) Then
+            Dim StartPos As Integer = valuecheck.IndexOf("&") + 2
+            Dim EndPos As Integer = valuecheck.IndexOf("]", StartPos)
+            valuecheck = valuecheck.Substring(StartPos, EndPos - StartPos)
         End If
         Return valuecheck
     End Function
@@ -401,12 +404,21 @@ Public Class Form1
         For Each item In report.Root.Descendants(NS + "ReportParameter") 'Goes through the xml to find the data sets that are actually parameters to get their names and queries
             paramvar = item.FirstAttribute.Value
             adomdbutnodataset = True
+            issql = True
             alreadyset = False
             datatype = "String" 'String is the default value
             For Each item4 In item.Descendants(NS + "DataType")
                 datatype = item4.Value
             Next
             For Each item3 In item.Descendants(NS + "ValidValues") 'Checks each parameter to see if it's AS or SQL, then runs the appropriate function. If it's a yeardataset parameter, takes the value from DateYear
+                Dim valuefield As String = ""
+                Dim labelfield As String = ""
+                For Each item2 In item3.Descendants(NS + "ValueField")
+                    valuefield = item2.Value
+                Next
+                For Each item2 In item3.Descendants(NS + "LabelField")
+                    labelfield = item2.Value
+                Next
                 For Each item2 In item3.Descendants(NS + "DataSetName")
                     adomdbutnodataset = False
                     paramdataset = item2.Value
@@ -457,17 +469,17 @@ Public Class Form1
                     '        End If
                     '    End If
                     If (Not issql) Then
-                        SetParametersAdomd(DataSets, paramdataset, paramvar, filename, datatype)
+                        SetParametersAdomd(DataSets, paramdataset, paramvar, filename, datatype, valuefield, labelfield)
                     ElseIf (issql) Then
                         alreadyset = True
-                        SetParametersSQLQuery(DataSets, paramdataset, paramvar, filename, datatype)
+                        SetParametersSQLQuery(DataSets, paramdataset, paramvar, filename, datatype, valuefield, labelfield)
                     End If
                 Next
                 If (adomdbutnodataset) Then 'This is for the case where there is an ADOMD parameter that uses a list of values rather than a data set
                     For Each item2 In item3.Descendants(NS + "Label")
                         adomdvalues.Add(item2.Value)
                     Next
-                    SetParametersAdomd(DataSets, "adomdbutnodataset", paramvar, filename, datatype)
+                    SetParametersAdomd(DataSets, "adomdbutnodataset", paramvar, filename, datatype, valuefield, labelfield)
                     adomdvalues.Clear()
                 End If
             Next
@@ -485,22 +497,22 @@ Public Class Form1
             If SQLParameters.Count() = 0 Then 'If there are no parameters currently just adds it. Otherwise checks to make sure the parameter doesn't already exist.
                 Dim frm6 As Form6 = New Form6
                 frm6.ShowDialog() 'Opens the 2nd form used for setting the parameter
-            ElseIf (CheckArray("SQL", SQLParameters(SQLParameters.Count()).ParamVar, SQLParameters.Count())) Then
+            ElseIf (CheckArray("SQL", tempsqlparameter.ParamVar, SQLParameters.Count())) Then
                 Dim frm6 As Form6 = New Form6
                 frm6.ShowDialog() 'Opens the 2nd form used for setting the parameter
             End If
         Else
-            If SQLParameters.Count() = 0 = 0 Then 'If there are no parameters currently just adds it. Otherwise checks to make sure the parameter doesn't already exist.
+            If SQLParameters.Count() = 0 Then 'If there are no parameters currently just adds it. Otherwise checks to make sure the parameter doesn't already exist.
                 Dim frm2 As Form2 = New Form2
                 frm2.ShowDialog() 'Opens the 2nd form used for setting the parameter
-            ElseIf (CheckArray("SQL", SQLParameters(SQLParameters.Count()).ParamVar, SQLParameters.Count())) Then
+            ElseIf (CheckArray("SQL", tempsqlparameter.ParamVar, SQLParameters.Count())) Then
                 Dim frm2 As Form2 = New Form2
                 frm2.ShowDialog() 'Opens the 2nd form used for setting the parameter
             End If
         End If
     End Sub
 
-    Private Sub SetParametersSQLQuery(DataSets As List(Of Dataset), paramdataset As String, paramvar As String, filename As String, datatype As String)
+    Private Sub SetParametersSQLQuery(DataSets As List(Of Dataset), paramdataset As String, paramvar As String, filename As String, datatype As String, valuefield As String, labelfield As String)
         Dim report = XDocument.Load(ReportViewer1.LocalReport.ReportPath) 'This xml file is a copy of the original report
         For Each item In report.Root.Descendants(NS + "DataSet") 'Goes through the xml to find the data sets that are actually parameters to get their names and queries
             If (item.FirstAttribute.Value = paramdataset) Then
@@ -508,6 +520,8 @@ Public Class Form1
                 tempsqlparameter.ParamVar = paramvar
                 tempsqlparameter.DataType = datatype
                 tempsqlparameter.Dataset = paramdataset
+                tempsqlparameter.ValueField = valuefield
+                tempsqlparameter.LabelField = labelfield
                 Dim fileReader As String
                 fileReader = My.Computer.FileSystem.ReadAllText(ReportViewer1.LocalReport.ReportPath) 'Reads the report's xml data
                 For j As Integer = 0 To (DataSets.Count() - 1) 'Gets the connection string for the parameter data set
@@ -522,7 +536,7 @@ Public Class Form1
                     Dim frm7 As Form7 = New Form7
                     frm7.ShowDialog()
                     filenametemp = ""
-                ElseIf (CheckArray("SQL", SQLParameters(SQLParameters.Count()).ParamVar, SQLParameters.Count())) Then
+                ElseIf (CheckArray("SQL", tempsqlparameter.ParamVar, SQLParameters.Count())) Then
                     filenametemp = filename
                     Dim frm7 As Form7 = New Form7
                     frm7.ShowDialog()
@@ -532,17 +546,19 @@ Public Class Form1
         Next
     End Sub
 
-    Private Sub SetParametersAdomd(DataSets As List(Of Dataset), paramdataset As String, paramvar As String, filename As String, datatype As String)
+    Private Sub SetParametersAdomd(DataSets As List(Of Dataset), paramdataset As String, paramvar As String, filename As String, datatype As String, valuefield As String, labelfield As String)
         Dim report = XDocument.Load(ReportViewer1.LocalReport.ReportPath) 'This xml file is a copy of the original report
         If (paramdataset = "adomdbutnodataset") Then 'For the case where there is no dataset and the parameter uses a list instead.
             tempadomdparameter = New ParameterAdomd
             tempadomdparameter.ParamVar = paramvar
             tempadomdparameter.DataType = datatype
             tempadomdparameter.Dataset = "NODATASET"
+            tempadomdparameter.ValueField = valuefield
+            tempadomdparameter.LabelField = labelfield
             If AdomdParameters.Count = 0 Then
                 Dim frm4 As Form4 = New Form4
                 frm4.ShowDialog()
-            ElseIf (CheckArray("Adomd", AdomdParameters(AdomdParameters.Count()).ParamVar, AdomdParameters.Count())) Then
+            ElseIf (CheckArray("Adomd", tempadomdparameter.ParamVar, AdomdParameters.Count())) Then
                 Dim frm4 As Form4 = New Form4
                 frm4.ShowDialog()
             End If
@@ -553,7 +569,8 @@ Public Class Form1
                     tempadomdparameter.ParamVar = paramvar
                     tempadomdparameter.DataType = datatype
                     tempadomdparameter.Dataset = paramdataset
-
+                    tempadomdparameter.ValueField = valuefield
+                    tempadomdparameter.LabelField = labelfield
                     Dim fileReader As String
                     fileReader = My.Computer.FileSystem.ReadAllText(ReportViewer1.LocalReport.ReportPath) 'Reads the report's xml data
                     For j As Integer = 0 To (DataSets.Count() - 1) 'Gets the connection string for the parameter data set
@@ -568,7 +585,7 @@ Public Class Form1
                         Dim frm3 As Form3 = New Form3
                         frm3.ShowDialog()
                         filenametemp = ""
-                    ElseIf (CheckArray("Adomd", AdomdParameters(AdomdParameters.Count()).ParamVar, AdomdParameters.Count())) Then
+                    ElseIf (CheckArray("Adomd", tempadomdparameter.ParamVar, AdomdParameters.Count())) Then
                         filenametemp = filename
                         Dim frm3 As Form3 = New Form3
                         frm3.ShowDialog()
