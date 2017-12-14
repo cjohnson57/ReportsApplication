@@ -2,11 +2,12 @@
 
 Public Class Form2
     Private Sub Form2_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        Label1.Text = "Enter the value for parameter " + paramvarsql(countparamssql)
+        Label1.Text = "Enter the value for parameter " + tempsqlparameter.ParamVar
     End Sub
 
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
-        paramsql.Add(TextBox1.Text) 'Gets the parameter from the text box
+        tempsqlparameter.Parameter = TextBox1.Text
+        SQLParameters.Add(tempsqlparameter)
         Close()
     End Sub
 End Class

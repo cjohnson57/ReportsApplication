@@ -3,23 +3,28 @@ Imports System.Data.SqlClient
 
 Public Class Form7
     Private Sub Form7_Load(sender As Object, e As EventArgs) Handles MyBase.Load 'Loads a table based on the parameter data set's query, in order to populate the combo box
-        Label1.Text = "Enter the value for parameter " + paramvarsql(countparamssql).Replace("@", "")
-        Dim cn = New SqlConnection(sqlparamconnectionstrings(countparamssql))
+        Label1.Text = "Enter the value for parameter " + tempsqlparameter.ParamVar.Replace("@", "")
+        Dim cn = New SqlConnection(tempsqlparameter.ConnectionString)
         Dim da As SqlDataAdapter = New SqlDataAdapter()
-        Dim cmd = New SqlCommand(sqlparamcommands(countparamssql), cn)
+        Dim cmd = New SqlCommand(tempsqlparameter.Query, cn)
         Dim tbl = New DataTable
 
-        If (sqlparams) Then 'If there are parameters, adds them to the query
-            For l As Integer = 0 To (countparamssql - 1)
-                If (sqlparamconnectionstrings(l) = "NODATASET") Then
-                    Dim p As New SqlParameter(paramvarsql(l), paramsql(l))
-                    cmd.Parameters.Add(p)
+        If (SQLParameters.Count > 0) Then 'If there are parameters, adds them to the command using the parameters found in the SetParameters function
+            For l As Integer = 0 To (SQLParameters.Count - 1)
+                cmd.Parameters.AddWithValue(SQLParameters(l).ParamVar, SQLParameters(l).Parameter)
+            Next
+        End If
+
+        If (AdomdParameters.Count() > 0) Then 'It's possible for a SQL connection to use AS parameters, so they too must be added
+            For l As Integer = 0 To (AdomdParameters.Count() - 1)
+                If (AdomdParameters(l).ConnectionString = "NODATASET") Then
+                    cmd.Parameters.AddWithValue(AdomdParameters(l).ParamVar, AdomdParameters(l).Parameter)
                 Else
-                    Dim p As New SqlParameter(paramvarsql(l), sqlqueryvalues(l))
-                    cmd.Parameters.Add(p)
+                    cmd.Parameters.AddWithValue(AdomdParameters(l).ParamVar, AdomdParameters(l).QueryValues)
                 End If
             Next
         End If
+
         da.SelectCommand = cmd
         Try
             cn.Open()
@@ -28,9 +33,9 @@ Public Class Form7
         Catch ex As Exception
             If (renderingmultiple) Then
                 wereerrors = True
-                errormessages.Add("Error in connection for parameter " + paramvarsql(countparamssql).Replace("@", "") + "'s dataset in report " + filenametemp + Environment.NewLine + ex.Message)
+                errormessages.Add("Error in connection for parameter " + tempsqlparameter.ParamVar.Replace("@", "") + "'s dataset in report " + filenametemp + Environment.NewLine + ex.Message)
             Else
-                MsgBox("Error in connection for parameter " + paramvarsql(countparamssql).Replace("@", "") + "'s dataset in report " + filenametemp + Environment.NewLine + ex.Message)
+                MsgBox("Error in connection for parameter " + tempsqlparameter.ParamVar.Replace("@", "") + "'s dataset in report " + filenametemp + Environment.NewLine + ex.Message)
             End If
         End Try
 
@@ -53,32 +58,36 @@ Public Class Form7
             End If
         Next
         If ComboBox1.Items.Count = 1 Then
-            paramsql.Add(ComboBox1.Items(0).ToString)
+            tempsqlparameter.Parameter = ComboBox1.Items(0).ToString
             FindValue()
             Close()
         End If
     End Sub
 
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
-        paramsql.Add(ComboBox1.Text) 'Gets the parameter from the combo box
+        tempsqlparameter.Parameter = ComboBox1.Text
         FindValue()
         Close()
     End Sub
 
     Private Sub FindValue()
-        Dim cn = New SqlConnection(sqlparamconnectionstrings(countparamssql))
+        Dim cn = New SqlConnection(tempsqlparameter.ConnectionString)
         Dim da As SqlDataAdapter = New SqlDataAdapter()
-        Dim cmd = New SqlCommand(sqlparamcommands(countparamssql), cn)
+        Dim cmd = New SqlCommand(tempsqlparameter.Query, cn)
         Dim tbl = New DataTable
 
-        If (sqlparams) Then 'If there are parameters, adds them to the report
-            For l As Integer = 0 To (countparamssql - 1) 'This loop queries the data base for the parameter table, then sets it based on the user's entered value
-                If (sqlparamconnectionstrings(l) = "NODATASET") Then
-                    Dim p As New SqlParameter(paramvarsql(l), paramsql(l))
-                    cmd.Parameters.Add(p)
+        If (SQLParameters.Count > 0) Then 'If there are parameters, adds them to the command using the parameters found in the SetParameters function
+            For l As Integer = 0 To (SQLParameters.Count - 1)
+                cmd.Parameters.AddWithValue(SQLParameters(l).ParamVar, SQLParameters(l).Parameter)
+            Next
+        End If
+
+        If (AdomdParameters.Count() > 0) Then 'It's possible for a SQL connection to use AS parameters, so they too must be added
+            For l As Integer = 0 To (AdomdParameters.Count() - 1)
+                If (AdomdParameters(l).ConnectionString = "NODATASET") Then
+                    cmd.Parameters.AddWithValue(AdomdParameters(l).ParamVar, AdomdParameters(l).Parameter)
                 Else
-                    Dim p As New SqlParameter(paramvarsql(l), sqlqueryvalues(l))
-                    cmd.Parameters.Add(p)
+                    cmd.Parameters.AddWithValue(AdomdParameters(l).ParamVar, AdomdParameters(l).QueryValues)
                 End If
             Next
         End If
@@ -90,9 +99,9 @@ Public Class Form7
         Catch ex As Exception
             If (renderingmultiple) Then
                 wereerrors = True
-                errormessages.Add("Error in connection for parameter " + paramvarsql(countparamssql).Replace("@", "") + "'s dataset in report " + filenametemp + Environment.NewLine + ex.Message)
+                errormessages.Add("Error in connection for parameter " + tempsqlparameter.ParamVar.Replace("@", "") + "'s dataset in report " + filenametemp + Environment.NewLine + ex.Message)
             Else
-                MsgBox("Error in connection for parameter " + paramvarsql(countparamssql).Replace("@", "") + "'s dataset in report " + filenametemp + Environment.NewLine + ex.Message)
+                MsgBox("Error in connection for parameter " + tempsqlparameter.ParamVar.Replace("@", "") + "'s dataset in report " + filenametemp + Environment.NewLine + ex.Message)
             End If
         End Try
         Try
@@ -103,14 +112,15 @@ Public Class Form7
                     tbl.Columns(i).ColumnName = "ParameterValue"
                 End If
             Next
-            Dim row As DataRow = tbl.Select("ParameterCaption = '" + paramsql(countparamssql) + "'").FirstOrDefault()
+            Dim row As DataRow = tbl.Select("ParameterCaption = '" + tempsqlparameter.Parameter + "'").FirstOrDefault()
             Dim value As String
             value = row.Item("ParameterValue")
             value = ReplaceEscapeCharacters(value)
-            sqlqueryvalues.Add(value)
+            tempsqlparameter.QueryValues = value
         Catch ex As Exception
-            sqlqueryvalues.Add(paramsql(countparamssql))
+            tempsqlparameter.QueryValues = tempsqlparameter.Parameter
         End Try
+        SQLParameters.Add(tempsqlparameter)
     End Sub
 
     Private Function ReplaceEscapeCharacters(finaloutcome As String)

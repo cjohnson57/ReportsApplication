@@ -14,6 +14,38 @@ Public Class Form1
         ReportViewer1.RefreshReport()
     End Sub
 
+    Public Structure Dataset
+        Public Name As String
+        Public IsAnalysis As Boolean
+        Public ConnectionString As String
+        Public Query As String
+        Public DataSource As String
+    End Structure
+
+    Public Structure Datasource
+        Public Name As String
+        Public IsAnalysis As Boolean
+        Public ConnectionString As String
+    End Structure
+    Public Structure ParameterSQL
+        Public Parameter As String
+        Public ParamVar As String
+        Public ConnectionString As String
+        Public Query As String
+        Public QueryValues As String
+        Public Dataset As String
+        Public DataType As String
+    End Structure
+    Public Structure ParameterAdomd
+        Public Parameter As String
+        Public ParamVar As String
+        Public ConnectionString As String
+        Public Query As String
+        Public QueryValues As String
+        Public Dataset As String
+        Public DataType As String
+    End Structure
+
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
         OpenFileDialog1.Filter = "Report Files|*.rdlc;*.rdl"
         OpenFileDialog1.FileName = ""
@@ -35,20 +67,15 @@ Public Class Form1
         Dim numdatasets As Integer = NumTimes("DataSet Name", "Report") 'Finds the number of data sets in the report
         Dim i As Integer = -1 'Used as an index when finding strings in the report
         Dim count As Integer = 0
-        Dim datasetnames(numdatasets - 1) As String 'Array of data set names
-        Dim connectionstrings(numdatasources - 1) As String 'Array of connection strings for each data source
-        Dim datasourcenames(numdatasources - 1) As String 'Array of data source names
-        Dim currentdatasourcename As String 'Used to find data sources later
-        Dim query As String 'Later contains the command text for data sets
-        Dim isanalysisdatasources(numdatasources - 1) As Boolean 'An array used to determine if each datasource in datasources is analysis services
-        Dim isanalysisdatasets(numdatasets - 1) As Boolean 'An array used to determine if each dataset's datasource is analysis services
-        Dim datasetsdatasource(numdatasets - 1) As Integer 'An array that stores which data source a data set uses
-        Dim datasetqueries(numdatasets - 1) As String 'An array for data set queries
+
+        Dim DataSources As List(Of Datasource) = New List(Of Datasource)
+
+        Dim DataSets As List(Of Dataset) = New List(Of Dataset)
 
         FindNameSpace(filereaderdatasets)
 
         If (numdatasources = 0) Then 'If there is no data source, the report simply renders since no data has to be provided
-            SetParameters(datasourcenames, connectionstrings, numdatasources, filename, isanalysisdatasets, numdatasets, datasetnames) 'Sets parameters, as even if a report has no data it may have parameters
+            SetParameters(DataSources, DataSets, filename) 'Sets the parameters so they can be used when adding datasets
             ReplaceFields(filename) 'Replaces fields, required for AS reports 
             If (Not saveparameters) Then 'Clears variables unless rendering multiple reports
                 ClearGlobalVariables()
@@ -58,14 +85,17 @@ Public Class Form1
         Else
             While count < numdatasources 'This while loop finds each connection string in the report if there are multiple data sources
                 i = filereaderdatasources.IndexOf("<DataSource Name", i + 1)
-                connectionstrings(count) = FindString("<ConnectString", "</ConnectString", i)
+                Dim tempdatasource As Datasource = New Datasource
+                tempdatasource.ConnectionString = FindString("<ConnectString", "</ConnectString", i)
+                tempdatasource.IsAnalysis = False
                 If (FindString("<DataProvider", "</DataProvider", i) <> "SQL") Then 'If the data provider is not SQL, then it is Analysis Services
-                    isanalysisdatasources(count) = True
+                    tempdatasource.IsAnalysis = True
                 End If
-                If (Not connectionstrings(count).Contains("Integrated Security")) Then 'Adds integrated security if it's not already there
-                    connectionstrings(count) += ";Integrated Security=True"
+                If ((Not tempdatasource.ConnectionString.Contains("Integrated Security")) And (Not tempdatasource.IsAnalysis)) Then 'Adds integrated security if it's not already there, unless it's analysis services, which doesn't need it
+                    tempdatasource.ConnectionString += ";Integrated Security=True"
                 End If
-                datasourcenames(count) = FindDataSourceName(i, True)
+                tempdatasource.Name = FindDataSourceName(i, True)
+                DataSources.Add(tempdatasource)
                 count += 1
             End While
         End If
@@ -75,35 +105,31 @@ Public Class Form1
 
         For k As Integer = 0 To (numdatasets - 1)
             i = filereaderdatasets.IndexOf("<DataSet Name", i + 1) 'This block finds which data source the dataset is using, so it knows which connection string to use
-            currentdatasourcename = FindDataSourceName(i, False)
-            datasetnames(k) = FindDataSetName(i)
-            datasetqueries(k) = FindString("<CommandText", "</CommandText", i)
-            For j As Integer = 0 To (numdatasources - 1)
-                If (currentdatasourcename = datasourcenames(j)) Then
-                    isanalysisdatasets(k) = isanalysisdatasources(j)
-                    datasetsdatasource(k) = j
+            Dim tempdataset As Dataset = New Dataset
+            tempdataset.DataSource = FindDataSourceName(i, False)
+            tempdataset.Name = FindDataSetName(i)
+            tempdataset.Query = FindString("<CommandText", "</CommandText", i)
+            For j As Integer = 0 To (DataSources.Count - 1)
+                If (tempdataset.DataSource = DataSources(j).Name) Then
+                    tempdataset.IsAnalysis = DataSources(j).IsAnalysis
+                    tempdataset.ConnectionString = DataSources(j).ConnectionString
                     Exit For
                 End If
             Next
+            DataSets.Add(tempdataset)
         Next
-        SetParameters(datasourcenames, connectionstrings, numdatasources, filename, isanalysisdatasets, numdatasets, datasetnames) 'Sets the parameters so they can be used when adding datasets
 
-        While count < numdatasets 'This while loop iterates once for each dataset, since each dataset has to be set and filled individually
+        SetParameters(DataSources, DataSets, filename) 'Sets the parameters so they can be used when adding datasets
 
-            If (isanalysisdatasets(count)) Then 'Checks whether or not the data source uses analysis services
-                connectionstrings(datasetsdatasource(count)) = connectionstrings(datasetsdatasource(count)).Replace(";Integrated Security=True", "") 'Removes integrated security, since it doesn't work with AS
-
-                Dim cn = New AdomdConnection(connectionstrings(datasetsdatasource(count))) 'Sets the connection using the connection string found in the last block
-
-                ConnectAndFillAdomd(count, datasetqueries(count), cn, datasetnames, filename) 'Connects to the data source and fills the data set
+        For count = 0 To (DataSets.Count - 1) 'This while loop iterates once for each dataset, since each dataset has to be set and filled individually
+            If (DataSets(count).IsAnalysis) Then 'Checks whether or not the data source uses analysis services
+                Dim cn = New AdomdConnection(DataSets(count).ConnectionString) 'Sets the connection using the connection string found in the last block
+                ConnectAndFillAdomd(DataSets(count), cn, filename) 'Connects to the data source and fills the data set
             Else
-                Dim cn = New SqlConnection(connectionstrings(datasetsdatasource(count))) 'Sets the connection using the connection string found in the last block
-
-                ConnectAndFillSQL(count, datasetqueries(count), cn, datasetnames, filename) 'Connects to the data source and fills the data set
+                Dim cn = New SqlConnection(DataSets(count).ConnectionString) 'Sets the connection using the connection string found in the last block
+                ConnectAndFillSQL(DataSets(count), cn, filename) 'Connects to the data source and fills the data set
             End If
-
-            count += 1
-        End While
+        Next
 
         ReplaceFields(filename) 'Replaces fields, required for AS reports 
 
@@ -112,26 +138,22 @@ Public Class Form1
         End If
     End Sub
 
-    Private Sub ConnectAndFillSQL(count As Integer, query As String, cn As SqlConnection, datasetnames As String(), filename As String)
+    Private Sub ConnectAndFillSQL(DataSet As Dataset, cn As SqlConnection, filename As String)
 
-        Dim cmd = New SqlCommand(query, cn) With {.CommandTimeout = 120} 'Sets the sql command using the query
+        Dim cmd = New SqlCommand(DataSet.Query, cn) With {.CommandTimeout = 120} 'Sets the sql command using the query
 
-        If (sqlparams) Then 'If there are parameters, adds them to the command using the parameters found in the SetParameters function
-            For l As Integer = 0 To (countparamssql - 1)
-                If (l = 0) Then
-                    cmd.Parameters.AddWithValue(paramvarsql(l), paramsql(l))
-                ElseIf (CheckArray(paramvarsql, paramvarsql(l), l)) Then
-                    cmd.Parameters.AddWithValue(paramvarsql(l), paramsql(l))
-                End If
+        If (SQLParameters.Count > 0) Then 'If there are parameters, adds them to the command using the parameters found in the SetParameters function
+            For l As Integer = 0 To (SQLParameters.Count - 1)
+                cmd.Parameters.AddWithValue(SQLParameters(l).ParamVar, SQLParameters(l).Parameter)
             Next
         End If
 
-        If (adomdparams) Then 'It's possible for a SQL connection to use AS parameters, so they too must be added
-            For l As Integer = 0 To (countparamsadomd - 1)
-                If (adomdparamconnectionstrings(l) = "NODATASET") Then
-                    cmd.Parameters.AddWithValue(paramvaradomd(l), paramadomd(l))
+        If (AdomdParameters.Count() > 0) Then 'It's possible for a SQL connection to use AS parameters, so they too must be added
+            For l As Integer = 0 To (AdomdParameters.Count() - 1)
+                If (AdomdParameters(l).ConnectionString = "NODATASET") Then
+                    cmd.Parameters.AddWithValue(AdomdParameters(l).ParamVar, AdomdParameters(l).Parameter)
                 Else
-                    cmd.Parameters.AddWithValue(paramvaradomd(l), adomdqueryvalues(l))
+                    cmd.Parameters.AddWithValue(AdomdParameters(l).ParamVar, AdomdParameters(l).QueryValues)
                 End If
             Next
         End If
@@ -146,43 +168,43 @@ Public Class Form1
         Catch ex As Exception 'Catches if there's an error connecting to the dataset
             If (renderingmultiple) Then
                 wereerrors = True
-                errormessages.Add("Error in connection for dataset " + datasetnames(count) + " in report " + filename + Environment.NewLine + ex.Message)
+                errormessages.Add("Error in connection for dataset " + DataSet.Name + " in report " + filename + Environment.NewLine + ex.Message)
             Else
-                MsgBox("Error in connection for dataset " + datasetnames(count) + " in report " + filename + Environment.NewLine + ex.Message)
+                MsgBox("Error in connection for dataset " + DataSet.Name + " in report " + filename + Environment.NewLine + ex.Message)
             End If
         End Try
 
-        Dim rptData = New ReportDataSource(datasetnames(count), tbl) 'Sets the data set with the data table
+        Dim rptData = New ReportDataSource(DataSet.Name, tbl) 'Sets the data set with the data table
 
         ReportViewer1.LocalReport.DataSources.Add(rptData) 'Adds the report data to the report
 
     End Sub
 
-    Private Sub ConnectAndFillAdomd(count As Integer, query As String, cn As AdomdConnection, datasetnames As String(), filename As String)
+    Private Sub ConnectAndFillAdomd(DataSet As Dataset, cn As AdomdConnection, filename As String)
 
         Dim da As AdomdDataAdapter = New AdomdDataAdapter()
-        Dim cmd = New AdomdCommand(query, cn) With {.CommandTimeout = 120} 'Sets the command
+        Dim cmd = New AdomdCommand(DataSet.Query, cn) With {.CommandTimeout = 120} 'Sets the command
         Dim tbl = New DataTable
 
-        If (sqlparams) Then 'It's possible for an AS connection to use SQL parameters, so they too must be added
-            For l As Integer = 0 To (countparamssql - 1)
+        If (SQLParameters.Count > 0) Then 'It's possible for an AS connection to use SQL parameters, so they too must be added
+            For l As Integer = 0 To (SQLParameters.Count - 1)
                 If (l = 0) Then
-                    Dim p As New AdomdParameter(paramvarsql(l), paramsql(l))
+                    Dim p As New AdomdParameter(SQLParameters(l).ParamVar, SQLParameters(l).Parameter)
                     cmd.Parameters.Add(p)
-                ElseIf (CheckArray(paramvarsql, paramvarsql(l), l)) Then
-                    Dim p As New AdomdParameter(paramvarsql(l), paramsql(l))
+                ElseIf (CheckArray("SQL", SQLParameters(l).ParamVar, l)) Then
+                    Dim p As New AdomdParameter(SQLParameters(l).ParamVar, SQLParameters(l).Parameter)
                     cmd.Parameters.Add(p)
                 End If
             Next
         End If
 
-        If (adomdparams) Then 'If there are parameters, adds them to the command using the parameters found in the SetParameters function
-            For l As Integer = 0 To (countparamsadomd - 1)
-                If (adomdparamconnectionstrings(l) = "NODATASET") Then
-                    Dim p As New AdomdParameter(paramvaradomd(l), paramadomd(l))
+        If (AdomdParameters.Count() > 0) Then 'If there are parameters, adds them to the command using the parameters found in the SetParameters function
+            For l As Integer = 0 To (AdomdParameters.Count() - 1)
+                If (AdomdParameters(l).ConnectionString = "NODATASET") Then
+                    Dim p As New AdomdParameter(AdomdParameters(l).ParamVar, AdomdParameters(l).Parameter)
                     cmd.Parameters.Add(p)
                 Else
-                    Dim p As New AdomdParameter(paramvaradomd(l), adomdqueryvalues(l))
+                    Dim p As New AdomdParameter(AdomdParameters(l).ParamVar, AdomdParameters(l).QueryValues)
                     cmd.Parameters.Add(p)
                 End If
             Next
@@ -197,13 +219,13 @@ Public Class Form1
         Catch ex As Exception 'Catches if there's an error connecting to the dataset
             If (renderingmultiple) Then
                 wereerrors = True
-                errormessages.Add("Error in connection for dataset " + datasetnames(count) + " in report " + filename + Environment.NewLine + ex.Message)
+                errormessages.Add("Error in connection for dataset " + DataSet.Name + " in report " + filename + Environment.NewLine + ex.Message)
             Else
-                MsgBox("Error in connection for dataset " + datasetnames(count) + " in report " + filename + Environment.NewLine + ex.Message)
+                MsgBox("Error in connection for dataset " + DataSet.Name + " in report " + filename + Environment.NewLine + ex.Message)
             End If
         End Try
 
-        Dim rptData = New ReportDataSource(datasetnames(count), tbl) 'Sets the data set with the data table
+        Dim rptData = New ReportDataSource(DataSet.Name, tbl) 'Sets the data set with the data table
 
         ReportViewer1.LocalReport.DataSources.Add(rptData) 'Adds the report data to the report
 
@@ -239,8 +261,8 @@ Public Class Form1
                         Exit For
                     End If
                 Next
-                For l As Integer = 0 To (countparamsadomd - 1) 'Checks if the column is a parameter
-                    If (paramvaradomd(l) = columnname) Then
+                For l As Integer = 0 To (AdomdParameters.Count() - 1) 'Checks if the column is a parameter
+                    If (AdomdParameters(l).ParamVar = columnname) Then
                         isparametercolumn = True
                     End If
                 Next
@@ -264,11 +286,11 @@ Public Class Form1
         report.Save(filename) 'Saves the new, changed report and switches the report to it
         ReportViewer1.LocalReport.ReportPath = filename
 
-        If (sqlparams) Then 'If there are sql parameters, adds them to the report (they have to be added to the report separately from the dataset)
-            For l As Integer = 0 To (countparamssql - 1)
+        If (SQLParameters.Count() > 0) Then 'If there are sql parameters, adds them to the report (they have to be added to the report separately from the dataset)
+            For l As Integer = 0 To (SQLParameters.Count() - 1)
                 For Each item In report.Root.Descendants(NS + "ReportParameter")
-                    If (item.FirstAttribute.Value = paramvarsql(l)) Then
-                        Dim p As New ReportParameter(paramvarsql(l), paramsql(l))
+                    If (item.FirstAttribute.Value = SQLParameters(l).ParamVar) Then
+                        Dim p As New ReportParameter(SQLParameters(l).ParamVar, SQLParameters(l).Parameter)
                         Try 'During testing this was a common place for errors. Not because of the parameters, but because if you try to add parameters to a report which has a bad definition, it will give an error.
                             ReportViewer1.LocalReport.SetParameters(p)
                         Catch ex As Exception
@@ -289,28 +311,28 @@ Public Class Form1
 
         Dim m As Integer = 0
 
-        If (adomdparams) Then 'If there are adomd parameters, adds them to the report (they have to be added to the report separately from the dataset)
+        If (AdomdParameters.Count() > 0) Then 'If there are adomd parameters, adds them to the report (they have to be added to the report separately from the dataset)
             For Each item In report.Root.Descendants(NS + "ReportParameter")
-                For m = 0 To (countparamsadomd - 1)
-                    If (item.FirstAttribute.Value = paramvaradomd(m)) Then
-                        If (adomdparamconnectionstrings(m) = "NODATASET") Then
-                            Dim p As New ReportParameter(paramvaradomd(m), paramadomd(m))
+                For m = 0 To (AdomdParameters.Count - 1)
+                    If (item.FirstAttribute.Value = AdomdParameters(m).ParamVar) Then
+                        If (AdomdParameters(m).ConnectionString = "NODATASET") Then
+                            Dim p As New ReportParameter(AdomdParameters(m).ParamVar, AdomdParameters(m).Parameter)
                             ReportViewer1.LocalReport.SetParameters(p)
                         Else
-                            Dim p As New ReportParameter(paramvaradomd(m), adomdqueryvalues(m))
+                            Dim p As New ReportParameter(AdomdParameters(m).ParamVar, AdomdParameters(m).QueryValues)
                             Dim fileReader As String
                             fileReader = My.Computer.FileSystem.ReadAllText(ReportViewer1.LocalReport.ReportPath) 'Reads the report's xml data
                             'Adds a parameter for each adomd parameter. This is because adomd parameters in report builder have two values, their value and their label (x.value and x.label). Here, adomd parameters are not that complex. So it makes one parameter for the value and one for the label. Then replaces all references to x.label with xname.value
-                            fileReader = fileReader.Insert((fileReader.IndexOf("</ReportParameters>")), "<ReportParameter Name=""" + paramvaradomd(m) + "Name"">
-                                <DataType>" + adomddatatypes(m) + "</DataType>
+                            fileReader = fileReader.Insert((fileReader.IndexOf("</ReportParameters>")), "<ReportParameter Name=""" + AdomdParameters(m).ParamVar + "Name"">
+                                <DataType>" + AdomdParameters(m).DataType + "</DataType>
                                   <DefaultValue>
                                     <Values>
-                                      <Value>" + paramadomd(m) + "</Value>
+                                      <Value>" + AdomdParameters(m).Parameter + "</Value>
                                     </Values>
                                   </DefaultValue>
                               </ReportParameter>
                             ")
-                            fileReader = fileReader.Replace("Parameters!" + paramvaradomd(m) + ".Label", "Parameters!" + paramvaradomd(m) + "Name.Value")
+                            fileReader = fileReader.Replace("Parameters!" + AdomdParameters(m).ParamVar + ".Label", "Parameters!" + AdomdParameters(m).ParamVar + "Name.Value")
                             'Microsoft's 2016 report builder added a section for parameter layouts. Despite the application not using these, they must exist for each parameter. So this block adds one to the number of columns, then adds the required information for the parameter
                             If fileReader.Contains("<ReportParametersLayout>") Then
                                 Dim i1 As Integer = fileReader.IndexOf("<NumberOfColumns>") + 17
@@ -321,7 +343,7 @@ Public Class Form1
                                 fileReader = fileReader.Insert((fileReader.IndexOf("</CellDefinitions>")), "<CellDefinition>
                                 <ColumnIndex>" + columns.ToString() + "</ColumnIndex>
                                 <RowIndex>0</RowIndex>
-                                <ParameterName>" + paramvaradomd(m) + "Name</ParameterName>
+                                <ParameterName>" + AdomdParameters(m).ParamVar + "Name</ParameterName>
                             </CellDefinition>
                             ")
                             End If
@@ -366,15 +388,15 @@ Public Class Form1
         Return valuecheck
     End Function
 
-    Private Sub SetParameters(datasourcenames As String(), connectionstrings As String(), numdatasources As Integer, filename As String, isanalysis As Boolean(), numdatasets As Integer, datasetnames As String())
+    Private Sub SetParameters(DataSources As List(Of Datasource), DataSets As List(Of Dataset), filename As String)
         Dim report = XDocument.Load(ReportViewer1.LocalReport.ReportPath) 'This xml file is a copy of the original report
         Dim paramdataset As String
         Dim paramvar As String
         Dim datatype As String
         Dim issql As Boolean = True
         Dim adomdbutnodataset As Boolean = True
-        Dim yeardatasetnotset = True
-        Dim HSRG As Boolean = False
+        'Dim yeardatasetnotset = True
+        'Dim HSRG As Boolean = False
 
         For Each item In report.Root.Descendants(NS + "ReportParameter") 'Goes through the xml to find the data sets that are actually parameters to get their names and queries
             paramvar = item.FirstAttribute.Value
@@ -387,208 +409,168 @@ Public Class Form1
                 For Each item2 In item3.Descendants(NS + "DataSetName")
                     adomdbutnodataset = False
                     paramdataset = item2.Value
-                    adomdparamdatasets.Add(paramdataset)
-                    For i As Integer = 0 To numdatasources - 1
-                        If datasourcenames(i) = "CRSHDWHSRG" Then
-                            HSRG = True
+                    '                    adomdparamdatasets.Add(paramdataset) I have no idea why this was here
+                    'For i As Integer = 0 To DataSources.Count() - 1
+                    '    If DataSources(i).Name = "CRSHDWHSRG" Then
+                    '        HSRG = True
+                    '        Exit For
+                    '    End If
+                    'Next
+                    For i As Integer = 0 To DataSets.Count() - 1
+                        If DataSets(i).Name = paramdataset Then
+                            issql = Not DataSets(i).IsAnalysis
                             Exit For
                         End If
                     Next
-                    For i As Integer = 0 To numdatasets - 1
-                        If datasetnames(i) = paramdataset Then
-                            issql = Not isanalysis(i)
-                            Exit For
-                        End If
-                    Next
-                    If (HSRG And (Not issql)) Then 'This is for HSRG specifically since we assume YearDataSet == DateYear. Otherwise it will ask for the value as normal
-                        If ((String.Compare(paramdataset, "YearDataSet", True) = 0)) Then
-                            yeardatasetnotset = True
-                            For l As Integer = 0 To (countparamsadomd - 1)
-                                If (paramvaradomd(l) = "DateYear") Then
-                                    paramvarsql.Add("Year")
-                                    paramsql.Add(paramadomd(l))
-                                    countparamssql += 1
-                                    yeardatasetnotset = False
-                                    sqlparams = True
-                                End If
-                            Next
-                            If (yeardatasetnotset) Then
-                                sqlparams = True
-                                SetParametersSQL(paramvar, datatype)
-                            End If
-                        Else
-                            If ((String.Compare(paramdataset, "YearDataSet", True) = 0)) Then
-                                yeardatasetnotset = True
-                                For l As Integer = 0 To (countparamsadomd - 1)
-                                    If (paramvaradomd(l) = "DateYear") Then
-                                        paramvarsql.Add("Year")
-                                        paramsql.Add(paramadomd(l))
-                                        countparamssql += 1
-                                        yeardatasetnotset = False
-                                        sqlparams = True
-                                    End If
-                                Next
-                                If (yeardatasetnotset) Then
-                                    sqlparams = True
-                                    SetParametersSQL(paramvar, datatype)
-                                End If
-                            Else
-                                adomdparams = True
-                                SetParametersAdomd(datasourcenames, connectionstrings, numdatasources, paramdataset, paramvar, filename, datatype)
-                            End If
-                        End If
-                    ElseIf (Not issql) Then
-                        adomdparams = True
-                        SetParametersAdomd(datasourcenames, connectionstrings, numdatasources, paramdataset, paramvar, filename, datatype)
+                    'If (HSRG And (Not issql)) Then 'This is for HSRG specifically since we assume YearDataSet == DateYear. Otherwise it will ask for the value as normal
+                    '    If ((String.Compare(paramdataset, "YearDataSet", True) = 0)) Then
+                    '        yeardatasetnotset = True
+                    '        For l As Integer = 0 To (countparamsadomd - 1)
+                    '            If (paramvaradomd(l) = "DateYear") Then
+                    '                paramvarsql.Add("Year")
+                    '                paramsql.Add(paramadomd(l))
+                    '                countparamssql += 1
+                    '                yeardatasetnotset = False
+                    '            End If
+                    '        Next
+                    '        If (yeardatasetnotset) Then
+                    '            SetParametersSQL(paramvar, datatype)
+                    '        End If
+                    '    Else
+                    '        If ((String.Compare(paramdataset, "YearDataSet", True) = 0)) Then
+                    '            yeardatasetnotset = True
+                    '            For l As Integer = 0 To (countparamsadomd - 1)
+                    '                If (paramvaradomd(l) = "DateYear") Then
+                    '                    paramvarsql.Add("Year")
+                    '                    paramsql.Add(paramadomd(l))
+                    '                    countparamssql += 1
+                    '                    yeardatasetnotset = False
+                    '                    sqlparams = True
+                    '                End If
+                    '            Next
+                    '            If (yeardatasetnotset) Then
+                    '                SetParametersSQL(paramvar, datatype)
+                    '            End If
+                    '        Else
+                    '            SetParametersAdomd(DataSets, paramdataset, paramvar, filename, datatype)
+                    '        End If
+                    '    End If
+                    If (Not issql) Then
+                        SetParametersAdomd(DataSets, paramdataset, paramvar, filename, datatype)
                     ElseIf (issql) Then
-                        sqlparams = True
-                        SetParametersSQLQuery(datasourcenames, connectionstrings, numdatasources, paramdataset, paramvar, filename, datatype)
+                        SetParametersSQLQuery(DataSets, paramdataset, paramvar, filename, datatype)
                     End If
                 Next
                 If (adomdbutnodataset) Then 'This is for the case where there is an ADOMD parameter that uses a list of values rather than a data set
                     For Each item2 In item3.Descendants(NS + "Label")
                         adomdvalues.Add(item2.Value)
                     Next
-                    SetParametersAdomd(datasourcenames, connectionstrings, numdatasources, "adomdbutnodataset", paramvar, filename, datatype)
+                    SetParametersAdomd(DataSets, "adomdbutnodataset", paramvar, filename, datatype)
                     adomdvalues.Clear()
                 End If
             Next
             If (issql) Then
-                sqlparams = True
                 SetParametersSQL(paramvar, datatype)
             End If
         Next
     End Sub
 
     Private Sub SetParametersSQL(paramvar As String, datatype As String)
-        Dim tempcount As Integer = countparamssql 'Saves the original value of countparamssql
-        paramvarsql.Add(paramvar) 'Adds the parameter before incrementing countparamssql
-        sqldatatypes.Add(datatype)
+        tempsqlparameter = New ParameterSQL
+        tempsqlparameter.ParamVar = paramvar
+        tempsqlparameter.DataType = datatype
         If (datatype = "DateTime") Then 'Checks if the parameter is datetime or not, since it requires a different form with a datetime picker
-            If countparamssql = 0 Then 'If there are no parameters currently just adds it. Otherwise checks to make sure the parameter doesn't already exist.
+            If SQLParameters.Count() = 0 Then 'If there are no parameters currently just adds it. Otherwise checks to make sure the parameter doesn't already exist.
                 Dim frm6 As Form6 = New Form6
                 frm6.ShowDialog() 'Opens the 2nd form used for setting the parameter
-                countparamssql += 1
-            ElseIf (CheckArray(paramvarsql, paramvarsql(countparamssql), countparamssql)) Then
+            ElseIf (CheckArray("SQL", SQLParameters(SQLParameters.Count()).ParamVar, SQLParameters.Count())) Then
                 Dim frm6 As Form6 = New Form6
                 frm6.ShowDialog() 'Opens the 2nd form used for setting the parameter
-                countparamssql += 1
             End If
         Else
-            If countparamssql = 0 Then 'If there are no parameters currently just adds it. Otherwise checks to make sure the parameter doesn't already exist.
+            If SQLParameters.Count() = 0 = 0 Then 'If there are no parameters currently just adds it. Otherwise checks to make sure the parameter doesn't already exist.
                 Dim frm2 As Form2 = New Form2
                 frm2.ShowDialog() 'Opens the 2nd form used for setting the parameter
-                countparamssql += 1
-            ElseIf (CheckArray(paramvarsql, paramvarsql(countparamssql), countparamssql)) Then
+            ElseIf (CheckArray("SQL", SQLParameters(SQLParameters.Count()).ParamVar, SQLParameters.Count())) Then
                 Dim frm2 As Form2 = New Form2
                 frm2.ShowDialog() 'Opens the 2nd form used for setting the parameter
-                countparamssql += 1
             End If
-        End If
-        If (tempcount >= countparamssql) Then 'If countparamssql was not incremented, then that parameter must have already existed, so it removes the copy
-            paramvarsql.RemoveAt(paramvarsql.Count - 1)
-            sqldatatypes.RemoveAt(sqldatatypes.Count - 1)
         End If
     End Sub
 
-    Private Sub SetParametersSQLQuery(datasourcenames As String(), connectionstrings As String(), numdatasources As Integer, paramdataset As String, paramvar As String, filename As String, datatype As String)
+    Private Sub SetParametersSQLQuery(DataSets As List(Of Dataset), paramdataset As String, paramvar As String, filename As String, datatype As String)
         Dim report = XDocument.Load(ReportViewer1.LocalReport.ReportPath) 'This xml file is a copy of the original report
         For Each item In report.Root.Descendants(NS + "DataSet") 'Goes through the xml to find the data sets that are actually parameters to get their names and queries
             If (item.FirstAttribute.Value = paramdataset) Then
-                Dim tempcount As Integer = countparamssql 'Saves the original value of countparamssql
-                paramvarsql.Add(paramvar) 'Adds the parameter before incrementing countparamssql
-                sqldatatypes.Add(datatype)
-
+                tempsqlparameter = New ParameterSQL
+                tempsqlparameter.ParamVar = paramvar
+                tempsqlparameter.DataType = datatype
+                tempsqlparameter.Dataset = paramdataset
                 Dim fileReader As String
                 fileReader = My.Computer.FileSystem.ReadAllText(ReportViewer1.LocalReport.ReportPath) 'Reads the report's xml data
-                Dim i As Integer = fileReader.IndexOf("<DataSet Name=""" + paramdataset)
-                sqlparamcommands.Add(FindString("<CommandText", "</CommandText", i)) 'Finds the command for the parameter's data set
-                Dim currentdatasourcename As String = FindDataSourceName(i, False)
-                For j As Integer = 0 To (numdatasources - 1) 'Gets the connection string for the parameter data set
-                    If (currentdatasourcename = datasourcenames(j)) Then
-                        sqlparamconnectionstrings.Add(connectionstrings(j))
+                For j As Integer = 0 To (DataSets.Count() - 1) 'Gets the connection string for the parameter data set
+                    If (paramdataset = DataSets(j).Name) Then
+                        tempsqlparameter.Query = DataSets(j).Query
+                        tempsqlparameter.ConnectionString = DataSets(j).ConnectionString
                         Exit For
                     End If
                 Next
-                If countparamssql = 0 Then 'If there are no parameters currently just adds it. Otherwise checks to make sure the parameter doesn't already exist.
+                If SQLParameters.Count() = 0 Then 'If there are no parameters currently just adds it. Otherwise checks to make sure the parameter doesn't already exist.
                     filenametemp = filename
                     Dim frm7 As Form7 = New Form7
                     frm7.ShowDialog()
                     filenametemp = ""
-                    countparamssql += 1
-                ElseIf (CheckArray(paramvarsql, paramvarsql(countparamssql), countparamssql)) Then
+                ElseIf (CheckArray("SQL", SQLParameters(SQLParameters.Count()).ParamVar, SQLParameters.Count())) Then
                     filenametemp = filename
                     Dim frm7 As Form7 = New Form7
                     frm7.ShowDialog()
                     filenametemp = ""
-                    countparamssql += 1
-                End If
-                If (tempcount >= countparamssql) Then 'If countparamssql was not incremented, then that parameter must have already existed, so it removes the copy and all its attributes
-                    paramvarsql.RemoveAt(paramvarsql.Count - 1)
-                    sqlparamconnectionstrings.RemoveAt(sqlparamconnectionstrings.Count - 1)
-                    sqldatatypes.RemoveAt(sqldatatypes.Count - 1)
-                    sqlparamdatasets.RemoveAt(sqlparamdatasets.Count - 1)
-                    sqlparamcommands.RemoveAt(sqlparamcommands.Count - 1)
                 End If
             End If
         Next
     End Sub
 
-    Private Sub SetParametersAdomd(datasourcenames As String(), connectionstrings As String(), numdatasources As Integer, paramdataset As String, paramvar As String, filename As String, datatype As String)
+    Private Sub SetParametersAdomd(DataSets As List(Of Dataset), paramdataset As String, paramvar As String, filename As String, datatype As String)
         Dim report = XDocument.Load(ReportViewer1.LocalReport.ReportPath) 'This xml file is a copy of the original report
         If (paramdataset = "adomdbutnodataset") Then 'For the case where there is no dataset and the parameter uses a list instead.
-            paramvaradomd.Add(paramvar)
-            adomddatatypes.Add(datatype)
-            adomdparamconnectionstrings.Add("NODATASET") 'Since it uses no data set
-            If countparamsadomd = 0 Then
+            tempadomdparameter = New ParameterAdomd
+            tempadomdparameter.ParamVar = paramvar
+            tempadomdparameter.DataType = datatype
+            tempadomdparameter.Dataset = "NODATASET"
+            If AdomdParameters.Count = 0 Then
                 Dim frm4 As Form4 = New Form4
                 frm4.ShowDialog()
-                countparamsadomd += 1
-            ElseIf (CheckArray(paramvaradomd, paramvaradomd(countparamsadomd), countparamsadomd)) Then
+            ElseIf (CheckArray("Adomd", AdomdParameters(AdomdParameters.Count()).ParamVar, AdomdParameters.Count())) Then
                 Dim frm4 As Form4 = New Form4
                 frm4.ShowDialog()
-                countparamsadomd += 1
             End If
         Else
             For Each item In report.Root.Descendants(NS + "DataSet") 'Goes through the xml to find the data sets that are actually parameters to get their names and queries
                 If (item.FirstAttribute.Value = paramdataset) Then
-                    Dim tempcount As Integer = countparamsadomd 'Saves the original value of countparamsadomd
-                    paramvaradomd.Add(paramvar) 'Adds the parameter before incrementing countparamsadomd
-                    adomddatatypes.Add(datatype)
+                    tempadomdparameter = New ParameterAdomd
+                    tempadomdparameter.ParamVar = paramvar
+                    tempadomdparameter.DataType = datatype
+                    tempadomdparameter.Dataset = paramdataset
 
                     Dim fileReader As String
                     fileReader = My.Computer.FileSystem.ReadAllText(ReportViewer1.LocalReport.ReportPath) 'Reads the report's xml data
-                    Dim i As Integer = fileReader.IndexOf("<DataSet Name=""" + paramdataset)
-                    adomdparamcommands.Add(FindString("<CommandText", "</CommandText", i)) 'Finds the command for the parameter's data set
-                    Dim currentdatasourcename As String = FindDataSourceName(i, False)
-                    For j As Integer = 0 To (numdatasources - 1) 'Gets the connection string for the parameter data set
-                        If (currentdatasourcename = datasourcenames(j)) Then
-                            adomdparamconnectionstrings.Add(connectionstrings(j))
-                            If (adomdparamconnectionstrings(countparamsadomd).Contains("Integrated Security")) Then 'Takes away integrated security since it doesn't work with AS connection strings
-                                adomdparamconnectionstrings(countparamsadomd) = adomdparamconnectionstrings(countparamsadomd).Replace(";Integrated Security=True", "")
-                            End If
+                    For j As Integer = 0 To (DataSets.Count() - 1) 'Gets the connection string for the parameter data set
+                        If (paramdataset = DataSets(j).Name) Then
+                            tempadomdparameter.Query = DataSets(j).Query
+                            tempadomdparameter.ConnectionString = DataSets(j).ConnectionString
                             Exit For
                         End If
                     Next
-                    If countparamsadomd = 0 Then 'If there are no parameters currently just adds it. Otherwise checks to make sure the parameter doesn't already exist.
+                    If AdomdParameters.Count() = 0 Then 'If there are no parameters currently just adds it. Otherwise checks to make sure the parameter doesn't already exist.
                         filenametemp = filename
                         Dim frm3 As Form3 = New Form3
                         frm3.ShowDialog()
                         filenametemp = ""
-                        countparamsadomd += 1
-                    ElseIf (CheckArray(paramvaradomd, paramvaradomd(countparamsadomd), countparamsadomd)) Then
+                    ElseIf (CheckArray("Adomd", AdomdParameters(AdomdParameters.Count()).ParamVar, AdomdParameters.Count())) Then
                         filenametemp = filename
                         Dim frm3 As Form3 = New Form3
                         frm3.ShowDialog()
                         filenametemp = ""
-                        countparamsadomd += 1
-                    End If
-                    If (tempcount >= countparamsadomd) Then 'If countparamsadomd was not incremented, then that parameter must have already existed, so it removes the copy and all its attributes
-                        paramvaradomd.RemoveAt(paramvaradomd.Count - 1)
-                        adomdparamconnectionstrings.RemoveAt(adomdparamconnectionstrings.Count - 1)
-                        adomddatatypes.RemoveAt(adomddatatypes.Count - 1)
-                        adomdparamdatasets.RemoveAt(adomdparamdatasets.Count - 1)
-                        adomdparamcommands.RemoveAt(adomdparamcommands.Count - 1)
                     End If
                 End If
             Next
@@ -600,12 +582,12 @@ Public Class Form1
         fileReader = My.Computer.FileSystem.ReadAllText(ReportViewer1.LocalReport.ReportPath) 'Reads the report's xml data
         Dim report = XDocument.Load(ReportViewer1.LocalReport.ReportPath) 'This xml file is a copy of the original report
 
-        If (sqlparams) Then 'If there are sql parameters, changes their data type to what it should be
-            For l As Integer = 0 To (countparamssql - 1)
+        If (SQLParameters.Count() > 0) Then 'If there are sql parameters, changes their data type to what it should be
+            For l As Integer = 0 To (SQLParameters.Count() - 1)
                 For Each item In report.Root.Descendants(NS + "ReportParameter")
-                    If (item.FirstAttribute.Value = paramvarsql(l)) Then
-                        Dim datatypeindex = fileReader.IndexOf("<ReportParameter Name=""" + paramvarsql(l) + """>")
-                        Dim fileReadertemp1 As String = Replace(fileReader, "<DataType>String</DataType>", "<DataType>" + sqldatatypes(l) + "</DataType>", datatypeindex, 1)
+                    If (item.FirstAttribute.Value = SQLParameters(l).ParamVar) Then
+                        Dim datatypeindex = fileReader.IndexOf("<ReportParameter Name=""" + SQLParameters(l).ParamVar + """>")
+                        Dim fileReadertemp1 As String = Replace(fileReader, "<DataType>String</DataType>", "<DataType>" + SQLParameters(l).DataType + "</DataType>", datatypeindex, 1)
                         Dim fileReadertemp2 As String = fileReader.Substring(datatypeindex) 'This is necessary because the above line, using the Replace method, will start at the datatypeindex (which is required) and cuts out everything before it. So instead of setting filereader equal to it, the original part of the report starting at that index is replaced by the new one.
                         fileReader = fileReader.Replace(fileReadertemp2, fileReadertemp1)
                     End If
@@ -614,12 +596,12 @@ Public Class Form1
         End If
         Dim m As Integer = 0
 
-        If (adomdparams) Then 'If there are adomd parameters, changes their data type to what it should be
+        If (AdomdParameters.Count() > 0) Then 'If there are adomd parameters, changes their data type to what it should be
             For Each item In report.Root.Descendants(NS + "ReportParameter")
-                For m = 0 To (countparamsadomd - 1)
-                    If (item.FirstAttribute.Value = paramvaradomd(m)) Then
-                        Dim datatypeindex As Integer = fileReader.IndexOf("<ReportParameter Name=""" + paramvaradomd(m))
-                        Dim fileReadertemp1 = Replace(fileReader, "<DataType>String</DataType>", "<DataType>" + adomddatatypes(m) + "</DataType>", datatypeindex, 1)
+                For m = 0 To (AdomdParameters.Count() - 1)
+                    If (item.FirstAttribute.Value = AdomdParameters(m).ParamVar) Then
+                        Dim datatypeindex As Integer = fileReader.IndexOf("<ReportParameter Name=""" + AdomdParameters(m).ParamVar)
+                        Dim fileReadertemp1 = Replace(fileReader, "<DataType>String</DataType>", "<DataType>" + AdomdParameters(m).DataType + "</DataType>", datatypeindex, 1)
                         Dim fileReadertemp2 As String = fileReader.Substring(datatypeindex)  'This is necessary because the above line, using the Replace method, will start at the datatypeindex (which is required) and cuts out everything before it. So instead of setting filereader equal to it, the original part of the report starting at that index is replaced by the new one.
                         fileReader = fileReader.Replace(fileReadertemp2, fileReadertemp1)
                     End If
@@ -706,26 +688,12 @@ Public Class Form1
 
     Public Class GlobalVariables 'Necessary because of these variables' use in different forms, also helpful because of how many different functions use them
         'Variables for SQL parameters
-        Public Shared paramsql As New List(Of String)
-        Public Shared paramvarsql As New List(Of String)
-        Public Shared sqlparamconnectionstrings As New List(Of String)
-        Public Shared sqlparamcommands As New List(Of String)
-        Public Shared sqlqueryvalues As New List(Of String)
-        Public Shared sqlparamdatasets As New List(Of String)
-        Public Shared countparamssql As Integer = 0
-        Public Shared sqlparams As Boolean = False
-        Public Shared sqldatatypes As New List(Of String)
+        Public Shared SQLParameters As List(Of ParameterSQL) = New List(Of ParameterSQL)
+        Public Shared tempsqlparameter As ParameterSQL = New ParameterSQL
         'Variables for Adomd parameters
-        Public Shared paramadomd As New List(Of String)
-        Public Shared paramvaradomd As New List(Of String)
-        Public Shared adomdvalues As New List(Of String) 'For parameters with a list of values
-        Public Shared adomdparamconnectionstrings As New List(Of String)
-        Public Shared adomdparamcommands As New List(Of String)
-        Public Shared adomdqueryvalues As New List(Of String)
-        Public Shared adomdparamdatasets As New List(Of String)
-        Public Shared countparamsadomd As Integer = 0
-        Public Shared adomdparams As Boolean = False
-        Public Shared adomddatatypes As New List(Of String)
+        Public Shared AdomdParameters As List(Of ParameterAdomd) = New List(Of ParameterAdomd)
+        Public Shared tempadomdparameter As ParameterAdomd = New ParameterAdomd
+        Public Shared adomdvalues As List(Of String) = New List(Of String)
         'Variable for rendering multiple reports into one PDF
         Public Shared combinedfilename
         'Variable for the namespace of the report
@@ -738,34 +706,25 @@ Public Class Form1
     End Class
 
     Private Sub ClearGlobalVariables() 'Clears all the global variables
-        paramsql.Clear()
-        paramvarsql.Clear()
-        sqlparamconnectionstrings.Clear()
-        sqlparamcommands.Clear()
-        sqlqueryvalues.Clear()
-        sqlparamdatasets.Clear()
-        countparamssql = 0
-        sqlparams = False
-        sqldatatypes.Clear()
-        paramadomd.Clear()
-        paramvaradomd.Clear()
-        adomdvalues.Clear()
-        adomdparamconnectionstrings.Clear()
-        adomdparamcommands.Clear()
-        adomdqueryvalues.Clear()
-        adomdparamdatasets.Clear()
-        countparamsadomd = 0
-        adomdparams = False
-        adomddatatypes.Clear()
+        SQLParameters.Clear()
+        AdomdParameters.Clear()
         NS = ""
     End Sub
 
-    Private Function CheckArray(arr As List(Of String), value As String, count As Integer) 'Makes sure the parameter is not one that has already been assigned
-        For i As Integer = 0 To (count - 1)
-            If (arr(i) = value) Then
-                Return False
-            End If
-        Next
+    Private Function CheckArray(whicharray As String, value As String, count As Integer) 'Makes sure the parameter is not one that has already been assigned
+        If (whicharray = "Adomd") Then
+            For i As Integer = 0 To (count - 1)
+                If (AdomdParameters(i).ParamVar = value) Then
+                    Return False
+                End If
+            Next
+        ElseIf (whicharray = "SQL") Then
+            For i As Integer = 0 To (count - 1)
+                If (SQLParameters(i).ParamVar = value) Then
+                    Return False
+                End If
+            Next
+        End If
         Return True
     End Function
 
