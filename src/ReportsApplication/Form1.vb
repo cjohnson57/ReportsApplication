@@ -835,4 +835,41 @@ Public Class Form1
             End If
         End If
     End Sub
+
+    Private Sub PDFToolStripMenuItem1_Click(sender As Object, e As EventArgs) Handles PDFToolStripMenuItem1.Click
+        ExportCurrent("PDF", ".pdf")
+    End Sub
+
+    Private Sub ExcelToolStripMenuItem1_Click(sender As Object, e As EventArgs) Handles ExcelToolStripMenuItem1.Click
+        ExportCurrent("Excel", ".xls")
+    End Sub
+
+    Private Sub WordToolStripMenuItem1_Click(sender As Object, e As EventArgs) Handles WordToolStripMenuItem1.Click
+        ExportCurrent("Word", ".doc")
+    End Sub
+
+    Private Sub ExportCurrent(filetype As String, fileextension As String) 'Exports multiple reports using selected file type
+        FolderBrowserDialog1.ShowDialog()
+        Dim filepath As String = ""
+        filepath = FolderBrowserDialog1.SelectedPath
+        If (filepath <> "") Then
+            Dim filenum As Integer = 0
+            Dim bytes As Byte()
+
+            bytes = ReportViewer1.LocalReport.Render(filetype)
+            Dim filename As String
+            If (ReportViewer1.LocalReport.ReportPath IsNot Nothing) Then
+                filename = ReportViewer1.LocalReport.ReportPath.Replace(".rdlc", fileextension)
+                filename = filename.Replace(".rdl", fileextension)
+            Else
+                filename = "Welcome." + fileextension
+            End If
+
+            Dim fs As New FileStream(filepath + "\" + filename, FileMode.Create)
+            fs.Write(bytes, 0, bytes.Length)
+
+            ClearGlobalVariables()
+            DeleteFilesFromFolder()
+        End If
+    End Sub
 End Class
