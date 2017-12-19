@@ -70,6 +70,11 @@ Public Class Form7
             tempsqlparameter.QueryValues = tbl.Rows(0).ItemArray(k).ToString()
             SQLParameters.Add(tempsqlparameter)
             Close()
+        ElseIf (ComboBox1.Items.Count = 0) Then
+            tempsqlparameter.Parameter = ""
+            tempsqlparameter.QueryValues = ""
+            SQLParameters.Add(tempsqlparameter)
+            Close()
         End If
     End Sub
 

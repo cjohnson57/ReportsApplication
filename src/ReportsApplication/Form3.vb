@@ -74,6 +74,11 @@ Public Class Form3
             tempadomdparameter.QueryValues = tbl.Rows(0).ItemArray(k).ToString()
             AdomdParameters.Add(tempadomdparameter)
             Close()
+        ElseIf (ComboBox1.Items.Count = 0) Then
+            tempadomdparameter.Parameter = ""
+            tempadomdparameter.QueryValues = ""
+            AdomdParameters.Add(tempadomdparameter)
+            Close()
         End If
     End Sub
 

@@ -422,7 +422,7 @@ Public Class Form1
                 For Each item2 In item3.Descendants(NS + "DataSetName")
                     adomdbutnodataset = False
                     paramdataset = item2.Value
-                    '                    adomdparamdatasets.Add(paramdataset) I have no idea why this was here
+                    'adomdparamdatasets.Add(paramdataset) I have no idea why this was here
                     'For i As Integer = 0 To DataSources.Count() - 1
                     '    If DataSources(i).Name = "CRSHDWHSRG" Then
                     '        HSRG = True
@@ -450,23 +450,7 @@ Public Class Form1
                     '            SetParametersSQL(paramvar, datatype)
                     '        End If
                     '    Else
-                    '        If ((String.Compare(paramdataset, "YearDataSet", True) = 0)) Then
-                    '            yeardatasetnotset = True
-                    '            For l As Integer = 0 To (countparamsadomd - 1)
-                    '                If (paramvaradomd(l) = "DateYear") Then
-                    '                    paramvarsql.Add("Year")
-                    '                    paramsql.Add(paramadomd(l))
-                    '                    countparamssql += 1
-                    '                    yeardatasetnotset = False
-                    '                    sqlparams = True
-                    '                End If
-                    '            Next
-                    '            If (yeardatasetnotset) Then
-                    '                SetParametersSQL(paramvar, datatype)
-                    '            End If
-                    '        Else
                     '            SetParametersAdomd(DataSets, paramdataset, paramvar, filename, datatype)
-                    '        End If
                     '    End If
                     If (Not issql) Then
                         SetParametersAdomd(DataSets, paramdataset, paramvar, filename, datatype, valuefield, labelfield)
