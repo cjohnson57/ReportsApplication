@@ -809,6 +809,7 @@ Public Class Form1
                         filename = filename.Replace(".rdl", fileextension)
                         Dim fs As New FileStream(filepath + "\" + filename, FileMode.Create)
                         fs.Write(bytes, 0, bytes.Length)
+                        fs.Close()
                     End If
 
                     filenum += 1
@@ -817,7 +818,6 @@ Public Class Form1
                 combinedfilename = ""
                 ClearGlobalVariables()
                 DeleteFilesFromFolder()
-
                 If (wereerrors) Then
                     Dim response = MsgBox("Reports finished rendering." + Environment.NewLine + "There were " + errormessages.Count().ToString() + " errors during rendering." + Environment.NewLine + "These may or may not have affected the outcome of your reports." + Environment.NewLine + "Would you like to view the errors?", MsgBoxStyle.YesNo)
                     If response = MsgBoxResult.Yes Then
@@ -865,9 +865,9 @@ Public Class Form1
                 filename = "Welcome." + fileextension
             End If
 
-            Dim fs As New FileStream(filepath + "\" + filename, FileMode.Create)
-            fs.Write(bytes, 0, bytes.Length)
-
+            Using fs As New FileStream(filepath + "\" + filename, FileMode.Create)
+                fs.Write(bytes, 0, bytes.Length)
+            End Using
             ClearGlobalVariables()
             DeleteFilesFromFolder()
         End If

@@ -84,7 +84,7 @@ Partial Class Form1
         Me.MenuStrip1.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.ExportToolStripMenuItem, Me.ExportToolStripMenuItem1, Me.ExportOptionsToolStripMenuItem})
         Me.MenuStrip1.Location = New System.Drawing.Point(537, 1)
         Me.MenuStrip1.Name = "MenuStrip1"
-        Me.MenuStrip1.Size = New System.Drawing.Size(399, 24)
+        Me.MenuStrip1.Size = New System.Drawing.Size(307, 24)
         Me.MenuStrip1.TabIndex = 9
         Me.MenuStrip1.Text = "MenuStrip1"
         '
@@ -98,19 +98,19 @@ Partial Class Form1
         'PDFToolStripMenuItem
         '
         Me.PDFToolStripMenuItem.Name = "PDFToolStripMenuItem"
-        Me.PDFToolStripMenuItem.Size = New System.Drawing.Size(152, 22)
+        Me.PDFToolStripMenuItem.Size = New System.Drawing.Size(103, 22)
         Me.PDFToolStripMenuItem.Text = "PDF"
         '
         'ExcelToolStripMenuItem
         '
         Me.ExcelToolStripMenuItem.Name = "ExcelToolStripMenuItem"
-        Me.ExcelToolStripMenuItem.Size = New System.Drawing.Size(152, 22)
+        Me.ExcelToolStripMenuItem.Size = New System.Drawing.Size(103, 22)
         Me.ExcelToolStripMenuItem.Text = "Excel"
         '
         'WordToolStripMenuItem
         '
         Me.WordToolStripMenuItem.Name = "WordToolStripMenuItem"
-        Me.WordToolStripMenuItem.Size = New System.Drawing.Size(152, 22)
+        Me.WordToolStripMenuItem.Size = New System.Drawing.Size(103, 22)
         Me.WordToolStripMenuItem.Text = "Word"
         '
         'ExportToolStripMenuItem1
@@ -123,19 +123,19 @@ Partial Class Form1
         'PDFToolStripMenuItem1
         '
         Me.PDFToolStripMenuItem1.Name = "PDFToolStripMenuItem1"
-        Me.PDFToolStripMenuItem1.Size = New System.Drawing.Size(152, 22)
+        Me.PDFToolStripMenuItem1.Size = New System.Drawing.Size(103, 22)
         Me.PDFToolStripMenuItem1.Text = "PDF"
         '
         'ExcelToolStripMenuItem1
         '
         Me.ExcelToolStripMenuItem1.Name = "ExcelToolStripMenuItem1"
-        Me.ExcelToolStripMenuItem1.Size = New System.Drawing.Size(152, 22)
+        Me.ExcelToolStripMenuItem1.Size = New System.Drawing.Size(103, 22)
         Me.ExcelToolStripMenuItem1.Text = "Excel"
         '
         'WordToolStripMenuItem1
         '
         Me.WordToolStripMenuItem1.Name = "WordToolStripMenuItem1"
-        Me.WordToolStripMenuItem1.Size = New System.Drawing.Size(152, 22)
+        Me.WordToolStripMenuItem1.Size = New System.Drawing.Size(103, 22)
         Me.WordToolStripMenuItem1.Text = "Word"
         '
         'ExportOptionsToolStripMenuItem

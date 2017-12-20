@@ -75,7 +75,29 @@
           <Paragraph>
             <TextRuns>
               <TextRun>
-                <Value>To export reports, click on the "Export" menu button and choose your format, then the reports to export, then the location to export them to. You can export reports without viewing them.</Value>
+                <Value>To export the currently shown report, click on the "Export Current" menu button and choose the format.</Value>
+                <Style>
+                  <FontSize>12pt</FontSize>
+                </Style>
+              </TextRun>
+            </TextRuns>
+            <Style />
+          </Paragraph>
+          <Paragraph>
+            <TextRuns>
+              <TextRun>
+                <Value />
+                <Style>
+                  <FontSize>12pt</FontSize>
+                </Style>
+              </TextRun>
+            </TextRuns>
+            <Style />
+          </Paragraph>
+          <Paragraph>
+            <TextRuns>
+              <TextRun>
+                <Value>To open and export reports, click on the "Open and Export" menu button and choose your format, then the reports to export, then the location to export them to. You can export reports without viewing them.</Value>
                 <Style>
                   <FontSize>12pt</FontSize>
                 </Style>

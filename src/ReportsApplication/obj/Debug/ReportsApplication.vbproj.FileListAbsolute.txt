@@ -96,13 +96,13 @@ C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\Report
 C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\obj\Debug\ReportsApplication.vbproj.ReportsApplication.exe.config
 C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\obj\Debug\ReportsApplication.Form1.resources
 C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\obj\Debug\ReportsApplication.Form2.resources
+C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\obj\Debug\ReportsApplication.Form7.resources
 C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\obj\Debug\ReportsApplication.Form3.resources
 C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\obj\Debug\ReportsApplication.Form4.resources
 C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\obj\Debug\ReportsApplication.Form5.resources
+C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\obj\Debug\ReportsApplication.Form6.resources
 C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\obj\Debug\ReportsApplication.Resources.resources
 C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\obj\Debug\ReportsApplication.vbproj.GenerateResource.Cache
 C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\obj\Debug\ReportsApplication.exe
 C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\obj\Debug\ReportsApplication.xml
 C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\obj\Debug\ReportsApplication.pdb
-C:\Users\cjoh354\documents\visual studio 2017\Projects\ReportsApplication\ReportsApplication\obj\Debug\ReportsApplication.Form6.resources
-C:\Users\cjoh354\Documents\Visual Studio 2017\Projects\ReportsApplication\ReportsApplication\obj\Debug\ReportsApplication.Form7.resources
