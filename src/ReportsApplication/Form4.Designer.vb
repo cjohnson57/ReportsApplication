@@ -64,6 +64,7 @@ Partial Class Form4
         Me.Controls.Add(Me.Button1)
         Me.Controls.Add(Me.ComboBox1)
         Me.Name = "Form4"
+        Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
         Me.Text = "Parameter Entry"
         Me.ResumeLayout(False)
         Me.PerformLayout()

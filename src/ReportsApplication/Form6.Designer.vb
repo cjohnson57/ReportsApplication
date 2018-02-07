@@ -62,6 +62,7 @@ Partial Class Form6
         Me.Controls.Add(Me.Label1)
         Me.Controls.Add(Me.Button1)
         Me.Name = "Form6"
+        Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
         Me.Text = "Date Parameter Entry"
         Me.ResumeLayout(False)
         Me.PerformLayout()

@@ -7,6 +7,7 @@ Imports System.Text.RegularExpressions
 Imports PdfSharp.Pdf
 Imports PdfSharp.Pdf.IO
 
+'Get forms to open in center 
 
 Public Class Form1
 
@@ -57,8 +58,8 @@ Public Class Form1
             ReportViewer1.LocalReport.DataSources.Clear()
             ReportViewer1.LocalReport.ReportPath = OpenFileDialog1.FileName 'Sets the report equal to the file chosen by the user
             SetData(False, OpenFileDialog1.SafeFileName) 'Sets the parameters, adds data sets, replaces fields, renders report
-            ReportViewer1.RefreshReport() 'Used to show the new report
             Text = "Report Viewer - " + OpenFileDialog1.SafeFileName 'Places the name of the report in the control's title bar
+            ReportViewer1.RefreshReport() 'Used to show the new report
         End If
         DeleteFilesFromFolder() 'Clears all .rdl and .rdlc files from the application's folder
     End Sub
@@ -345,7 +346,6 @@ Public Class Form1
                             </CellDefinition>
                             ")
                             End If
-
                             My.Computer.FileSystem.DeleteFile(ReportViewer1.LocalReport.ReportPath) 'Deletes and rewrites the report with its new values
                             My.Computer.FileSystem.WriteAllText(ReportViewer1.LocalReport.ReportPath, fileReader, True)
                             Try 'During testing this was a common place for errors. Not because of the parameters, but because if you try to add parameters to a report which has a bad definition, it will give an error.

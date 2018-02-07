@@ -70,6 +70,7 @@ Partial Class Form7
         Me.Controls.Add(Me.ComboBox1)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.Name = "Form7"
+        Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
         Me.Text = "Parameter Entry"
         Me.ResumeLayout(False)
         Me.PerformLayout()
