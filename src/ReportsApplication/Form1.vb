@@ -7,8 +7,6 @@ Imports System.Text.RegularExpressions
 Imports PdfSharp.Pdf
 Imports PdfSharp.Pdf.IO
 
-'Get forms to open in center 
-
 Public Class Form1
 
     Private Sub Form1_Load(ByVal sender As System.Object, ByVal e As EventArgs) Handles MyBase.Load
@@ -422,36 +420,12 @@ Public Class Form1
                 For Each item2 In item3.Descendants(NS + "DataSetName")
                     adomdbutnodataset = False
                     paramdataset = item2.Value
-                    'adomdparamdatasets.Add(paramdataset) I have no idea why this was here
-                    'For i As Integer = 0 To DataSources.Count() - 1
-                    '    If DataSources(i).Name = "CRSHDWHSRG" Then
-                    '        HSRG = True
-                    '        Exit For
-                    '    End If
-                    'Next
                     For i As Integer = 0 To DataSets.Count() - 1
                         If DataSets(i).Name = paramdataset Then
                             issql = Not DataSets(i).IsAnalysis
                             Exit For
                         End If
                     Next
-                    'If (HSRG And (Not issql)) Then 'This is for HSRG specifically since we assume YearDataSet == DateYear. Otherwise it will ask for the value as normal
-                    '    If ((String.Compare(paramdataset, "YearDataSet", True) = 0)) Then
-                    '        yeardatasetnotset = True
-                    '        For l As Integer = 0 To (countparamsadomd - 1)
-                    '            If (paramvaradomd(l) = "DateYear") Then
-                    '                paramvarsql.Add("Year")
-                    '                paramsql.Add(paramadomd(l))
-                    '                countparamssql += 1
-                    '                yeardatasetnotset = False
-                    '            End If
-                    '        Next
-                    '        If (yeardatasetnotset) Then
-                    '            SetParametersSQL(paramvar, datatype)
-                    '        End If
-                    '    Else
-                    '            SetParametersAdomd(DataSets, paramdataset, paramvar, filename, datatype)
-                    '    End If
                     If (Not issql) Then
                         SetParametersAdomd(DataSets, paramdataset, paramvar, filename, datatype, valuefield, labelfield)
                     ElseIf (issql) Then
