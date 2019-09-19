@@ -98,8 +98,12 @@ Public Class Form1
                 If (FindString("<DataProvider", "</DataProvider", i) <> "SQL") Then 'If the data provider is not SQL, then it is Analysis Services
                     tempdatasource.IsAnalysis = True
                 End If
-                If (FindString("<rd:SecurityType", "</rd:SecurityType", i) = "Integrated" And (Not tempdatasource.ConnectionString.Contains("Integrated Security")) And (Not tempdatasource.IsAnalysis)) Then 'Adds integrated security if it's not already there, unless it's analysis services, which doesn't need it
-                    tempdatasource.ConnectionString += ";Integrated Security=True"
+                If (notblank) Then
+
+                Else
+                    If (FindString("<rd:SecurityType", "</rd:SecurityType", i) = "Integrated" And (Not tempdatasource.ConnectionString.Contains("Integrated Security")) And (Not tempdatasource.IsAnalysis)) Then 'Adds integrated security if it's not already there, unless it's analysis services, which doesn't need it
+                        tempdatasource.ConnectionString += ";Integrated Security=True"
+                    End If
                 End If
                 tempdatasource.Name = FindDataSourceName(i, True)
                 DataSources.Add(tempdatasource)
