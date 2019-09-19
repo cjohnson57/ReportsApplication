@@ -9,7 +9,7 @@ Imports PdfSharp.Pdf.IO
 
 Public Class Form1
 
-    Private Sub Form1_Load(ByVal sender As System.Object, ByVal e As EventArgs) Handles MyBase.Load
+    Private Sub Form1_Load(ByVal sender As Object, ByVal e As EventArgs) Handles MyBase.Load
         ReportViewer1.RefreshReport()
     End Sub
 
@@ -63,6 +63,8 @@ Public Class Form1
     End Sub
 
     Private Sub SetData(saveparameters As Boolean, filename As String)
+        PictureBox1.Visible = True 'Displays loading icon
+
         Dim filereaderdatasources As String = My.Computer.FileSystem.ReadAllText(ReportViewer1.LocalReport.ReportPath) 'Reads the report's xml data for data source purposes
         Dim filereaderdatasets As String = My.Computer.FileSystem.ReadAllText(ReportViewer1.LocalReport.ReportPath) 'Reads the report's xml data for data set purposes
         Dim numdatasources As Integer = NumTimes("DataSource Name", "Report") 'Finds the number of data sources in the report
@@ -93,7 +95,7 @@ Public Class Form1
                 If (FindString("<DataProvider", "</DataProvider", i) <> "SQL") Then 'If the data provider is not SQL, then it is Analysis Services
                     tempdatasource.IsAnalysis = True
                 End If
-                If ((Not tempdatasource.ConnectionString.Contains("Integrated Security")) And (Not tempdatasource.IsAnalysis)) Then 'Adds integrated security if it's not already there, unless it's analysis services, which doesn't need it
+                If (FindString("<rd:SecurityType", "</rd:SecurityType", i) = "Integrated" And (Not tempdatasource.ConnectionString.Contains("Integrated Security")) And (Not tempdatasource.IsAnalysis)) Then 'Adds integrated security if it's not already there, unless it's analysis services, which doesn't need it
                     tempdatasource.ConnectionString += ";Integrated Security=True"
                 End If
                 tempdatasource.Name = FindDataSourceName(i, True)
@@ -138,6 +140,8 @@ Public Class Form1
         If (Not saveparameters) Then 'Clears variables unless rendering multiple reports
             ClearGlobalVariables()
         End If
+
+        PictureBox1.Visible = False 'Hides loading icon
     End Sub
 
     Private Sub ConnectAndFillSQL(DataSet As Dataset, cn As SqlConnection, filename As String)

@@ -41,7 +41,9 @@ Partial Class Form1
         Me.UseSameValuesForSameParametersToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.CombineMultipleReportsIntoOnePDFOnlyToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.OnlyRenderTheFirstPageOfEachReportToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.PictureBox1 = New System.Windows.Forms.PictureBox()
         Me.MenuStrip1.SuspendLayout()
+        CType(Me.PictureBox1, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
         'Button1
@@ -169,11 +171,22 @@ Partial Class Form1
         Me.OnlyRenderTheFirstPageOfEachReportToolStripMenuItem.Size = New System.Drawing.Size(285, 22)
         Me.OnlyRenderTheFirstPageOfEachReportToolStripMenuItem.Text = "Only render the first page of each report"
         '
+        'PictureBox1
+        '
+        Me.PictureBox1.Image = CType(resources.GetObject("PictureBox1.Image"), System.Drawing.Image)
+        Me.PictureBox1.Location = New System.Drawing.Point(268, 414)
+        Me.PictureBox1.Name = "PictureBox1"
+        Me.PictureBox1.Size = New System.Drawing.Size(300, 100)
+        Me.PictureBox1.TabIndex = 10
+        Me.PictureBox1.TabStop = False
+        Me.PictureBox1.Visible = False
+        '
         'Form1
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(837, 929)
+        Me.Controls.Add(Me.PictureBox1)
         Me.Controls.Add(Me.MenuStrip1)
         Me.Controls.Add(Me.Button1)
         Me.Controls.Add(Me.ReportViewer1)
@@ -183,6 +196,7 @@ Partial Class Form1
         Me.Text = "Report Viewer"
         Me.MenuStrip1.ResumeLayout(False)
         Me.MenuStrip1.PerformLayout()
+        CType(Me.PictureBox1, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -205,4 +219,5 @@ Partial Class Form1
     Friend WithEvents PDFToolStripMenuItem1 As ToolStripMenuItem
     Friend WithEvents ExcelToolStripMenuItem1 As ToolStripMenuItem
     Friend WithEvents WordToolStripMenuItem1 As ToolStripMenuItem
+    Friend WithEvents PictureBox1 As PictureBox
 End Class
