@@ -11,6 +11,9 @@ Public Class Form1
 
     Private Sub Form1_Load(ByVal sender As Object, ByVal e As EventArgs) Handles MyBase.Load
         ReportViewer1.RefreshReport()
+        Me.Text = System.Configuration.ConfigurationSettings.AppSettings.Get("title")
+        'Me.ForeColor = Color.FromName(System.Configuration.ConfigurationSettings.AppSettings.Get("Background Color"))
+        Me.Icon = New System.Drawing.Icon(System.Configuration.ConfigurationSettings.AppSettings.Get("Icon"))
     End Sub
 
     Public Structure Dataset
@@ -849,5 +852,9 @@ Public Class Form1
             ClearGlobalVariables()
             DeleteFilesFromFolder()
         End If
+    End Sub
+
+    Private Sub ReportViewer1_Load(sender As Object, e As EventArgs) Handles ReportViewer1.Load
+        ReportViewer1.LocalReport.ReportPath = System.Configuration.ConfigurationSettings.AppSettings.Get("Default Report")
     End Sub
 End Class
