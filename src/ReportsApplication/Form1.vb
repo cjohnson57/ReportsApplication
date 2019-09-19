@@ -98,7 +98,13 @@ Public Class Form1
                 If (FindString("<DataProvider", "</DataProvider", i) <> "SQL") Then 'If the data provider is not SQL, then it is Analysis Services
                     tempdatasource.IsAnalysis = True
                 End If
-                If (notblank) Then
+
+
+                If Not (String.IsNullOrEmpty((System.Configuration.ConfigurationSettings.AppSettings.Get("user")).ToString()) And
+                String.IsNullOrEmpty(System.Configuration.ConfigurationSettings.AppSettings.Get("pwd").ToString())) Then
+                    tempdatasource.ConnectionString += ";UID=" + System.Configuration.ConfigurationSettings.AppSettings.Get("user").ToString() + ";PWD=" + System.Configuration.ConfigurationSettings.AppSettings.Get("pwd").ToString()
+
+
 
                 Else
                     If (FindString("<rd:SecurityType", "</rd:SecurityType", i) = "Integrated" And (Not tempdatasource.ConnectionString.Contains("Integrated Security")) And (Not tempdatasource.IsAnalysis)) Then 'Adds integrated security if it's not already there, unless it's analysis services, which doesn't need it
