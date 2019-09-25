@@ -13,7 +13,10 @@ Public Class Form1
         ReportViewer1.RefreshReport()
         Me.Text = System.Configuration.ConfigurationSettings.AppSettings.Get("title")
         'Me.ForeColor = Color.FromName(System.Configuration.ConfigurationSettings.AppSettings.Get("Background Color"))
-        Me.Icon = New System.Drawing.Icon(System.Configuration.ConfigurationSettings.AppSettings.Get("Icon"))
+        If Not String.IsNullOrEmpty(System.Configuration.ConfigurationSettings.AppSettings.Get("Icon").ToString()) Then
+            Me.Icon = New System.Drawing.Icon(System.Configuration.ConfigurationSettings.AppSettings.Get("Icon"))
+        End If
+        FactbookMenuItem.Checked = Boolean.Parse(System.Configuration.ConfigurationSettings.AppSettings.Get("Factbook Default"))
     End Sub
 
     Public Structure Dataset
@@ -63,6 +66,7 @@ Public Class Form1
             ReportViewer1.RefreshReport() 'Used to show the new report
         End If
         DeleteFilesFromFolder() 'Clears all .rdl and .rdlc files from the application's folder
+        PictureBox1.Visible = False 'Hides loading icon
     End Sub
 
     Private Sub SetData(saveparameters As Boolean, filename As String)
@@ -689,7 +693,7 @@ Public Class Form1
         Public Shared tempadomdparameter As ParameterAdomd = New ParameterAdomd
         Public Shared adomdvalues As List(Of String) = New List(Of String)
         'Variable for rendering multiple reports into one PDF
-        Public Shared combinedfilename
+        Public Shared combinedfilename As String
         'Variable for the namespace of the report
         Public Shared NS As XNamespace
         'Variables for error handling
@@ -724,7 +728,7 @@ Public Class Form1
 
     Private Sub DeleteFilesFromFolder() 'Deletes files from the program folder so they're not left over
         For Each fil As String In Directory.GetFiles(Application.StartupPath)
-            If ((Path.GetExtension(fil) = ".rdl") Or (Path.GetExtension(fil) = ".rdlc")) Then  'Checks extension
+            If ((Path.GetExtension(fil) = ".rdl") Or (Path.GetExtension(fil) = ".rdlc") And Not fil.Contains(System.Configuration.ConfigurationSettings.AppSettings.Get("Default Report"))) Then  'Checks extension and that it's not the default report
                 File.Delete(fil)
             End If
         Next
@@ -761,12 +765,24 @@ Public Class Form1
                 Dim bytes As Byte()
                 Dim pdfDoc As New PdfDocument()
 
-                If (CombineMultipleReportsIntoOnePDFOnlyToolStripMenuItem.Checked And filetype = "PDF") Then
+                If (CombineMultipleReportsIntoOnePDFOnlyToolStripMenuItem.Checked And filetype = "PDF") Or FactbookMenuItem.Checked Then
                     Dim frm5 As Form5 = New Form5
                     frm5.ShowDialog()
                 End If
                 If (OpenFileDialog2.FileNames.Count > 1) Then
                     renderingmultiple = True
+                End If
+
+                Dim previousnum As Integer = 0 'Number of previous report, used to detect gaps where blank page must be inserted
+                Dim Blank As PdfPage = New PdfPage
+                If (FactbookMenuItem.Checked And OpenFileDialog2.SafeFileNames.Contains("Blank Report.rdl")) Then 'If doing factbook, render and store blank page
+                    ReportViewer1.LocalReport.DataSources.Clear()
+                    ReportViewer1.LocalReport.ReportPath = (From f In OpenFileDialog2.FileNames Where f.Contains("Blank Report.rdl"))(0) 'Sets the report equal to the blank report
+                    SetData(UseSameValuesForSameParametersToolStripMenuItem.Checked, "Blank Report.rdl")
+                    Dim blankbytes As Byte() = ReportViewer1.LocalReport.Render(filetype)
+                    Dim BlankMS As MemoryStream = New MemoryStream(blankbytes)
+                    Dim BlankDoc As PdfDocument = PdfReader.Open(BlankMS, PdfDocumentOpenMode.Import)
+                    Blank = BlankDoc.Pages(0) 'Blank report is now stored in here
                 End If
 
                 For Each file In OpenFileDialog2.FileNames 'For each file, sets the report/parameters, renders them, saves them to the drive
@@ -775,14 +791,23 @@ Public Class Form1
                     SetData(UseSameValuesForSameParametersToolStripMenuItem.Checked, OpenFileDialog2.SafeFileNames(filenum)) 'Sets the source for the data, finds the query, and populates the data table
                     bytes = ReportViewer1.LocalReport.Render(filetype)
 
-                    If (CombineMultipleReportsIntoOnePDFOnlyToolStripMenuItem.Checked And filetype = "PDF") Then
+                    If ((CombineMultipleReportsIntoOnePDFOnlyToolStripMenuItem.Checked And filetype = "PDF" Or FactbookMenuItem.Checked) And Not (FactbookMenuItem.Checked And OpenFileDialog2.SafeFileNames(filenum) = "Blank Report.rdl")) Then
                         Dim MS As MemoryStream = New MemoryStream(bytes)
                         Dim tempPDFDoc As PdfDocument = PdfReader.Open(MS, PdfDocumentOpenMode.Import)
                         Dim pagestorender As Integer
-                        If (OnlyRenderTheFirstPageOfEachReportToolStripMenuItem.Checked) Then
+                        If (OnlyRenderTheFirstPageOfEachReportToolStripMenuItem.Checked Or FactbookMenuItem.Checked) Then
                             pagestorender = 0
                         Else
                             pagestorender = tempPDFDoc.Pages.Count - 1
+                        End If
+                        If (FactbookMenuItem.Checked And Not (Blank Is New PdfPage)) Then 'Must check to see if blank pages should be added
+                            Dim newnum As Integer = Integer.Parse(OpenFileDialog2.SafeFileNames(filenum).Split("-"c)(0)) 'Gets page number
+                            If newnum - previousnum > 1 Then 'If there is a difference of greater than one
+                                For i As Integer = 0 To newnum - previousnum - 2 'Run once for every difference greater than 1
+                                    pdfDoc.AddPage(Blank) 'Add to pdf
+                                Next
+                            End If
+                            previousnum = newnum
                         End If
                         For i As Integer = 0 To pagestorender
                             Dim page As PdfPage = tempPDFDoc.Pages(i)
@@ -794,7 +819,7 @@ Public Class Form1
                         Else
                             pdfDoc.Save(filepath + "\" + combinedfilename + ".pdf")
                         End If
-                    Else
+                    ElseIf (Not (FactbookMenuItem.Checked And OpenFileDialog2.SafeFileNames(filenum) = "Blank Report.rdl")) Then
                         Dim filename As String
                         filename = OpenFileDialog2.SafeFileNames(filenum).Replace(".rdlc", fileextension)
                         filename = filename.Replace(".rdl", fileextension)
@@ -809,6 +834,7 @@ Public Class Form1
                 combinedfilename = ""
                 ClearGlobalVariables()
                 DeleteFilesFromFolder()
+                PictureBox1.Visible = False 'Hides loading icon
                 If (wereerrors) Then
                     Dim response = MsgBox("Reports finished rendering." + Environment.NewLine + "There were " + errormessages.Count().ToString() + " errors during rendering." + Environment.NewLine + "These may or may not have affected the outcome of your reports." + Environment.NewLine + "Would you like to view the errors?", MsgBoxStyle.YesNo)
                     If response = MsgBoxResult.Yes Then

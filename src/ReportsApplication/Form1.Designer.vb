@@ -42,6 +42,7 @@ Partial Class Form1
         Me.CombineMultipleReportsIntoOnePDFOnlyToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.OnlyRenderTheFirstPageOfEachReportToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.PictureBox1 = New System.Windows.Forms.PictureBox()
+        Me.FactbookMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.MenuStrip1.SuspendLayout()
         CType(Me.PictureBox1, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
@@ -100,19 +101,19 @@ Partial Class Form1
         'PDFToolStripMenuItem
         '
         Me.PDFToolStripMenuItem.Name = "PDFToolStripMenuItem"
-        Me.PDFToolStripMenuItem.Size = New System.Drawing.Size(103, 22)
+        Me.PDFToolStripMenuItem.Size = New System.Drawing.Size(180, 22)
         Me.PDFToolStripMenuItem.Text = "PDF"
         '
         'ExcelToolStripMenuItem
         '
         Me.ExcelToolStripMenuItem.Name = "ExcelToolStripMenuItem"
-        Me.ExcelToolStripMenuItem.Size = New System.Drawing.Size(103, 22)
+        Me.ExcelToolStripMenuItem.Size = New System.Drawing.Size(180, 22)
         Me.ExcelToolStripMenuItem.Text = "Excel"
         '
         'WordToolStripMenuItem
         '
         Me.WordToolStripMenuItem.Name = "WordToolStripMenuItem"
-        Me.WordToolStripMenuItem.Size = New System.Drawing.Size(103, 22)
+        Me.WordToolStripMenuItem.Size = New System.Drawing.Size(180, 22)
         Me.WordToolStripMenuItem.Text = "Word"
         '
         'ExportToolStripMenuItem1
@@ -142,7 +143,7 @@ Partial Class Form1
         '
         'ExportOptionsToolStripMenuItem
         '
-        Me.ExportOptionsToolStripMenuItem.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.UseSameValuesForSameParametersToolStripMenuItem, Me.CombineMultipleReportsIntoOnePDFOnlyToolStripMenuItem})
+        Me.ExportOptionsToolStripMenuItem.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.UseSameValuesForSameParametersToolStripMenuItem, Me.CombineMultipleReportsIntoOnePDFOnlyToolStripMenuItem, Me.FactbookMenuItem})
         Me.ExportOptionsToolStripMenuItem.Name = "ExportOptionsToolStripMenuItem"
         Me.ExportOptionsToolStripMenuItem.Size = New System.Drawing.Size(97, 20)
         Me.ExportOptionsToolStripMenuItem.Text = "Export Options"
@@ -153,15 +154,15 @@ Partial Class Form1
         Me.UseSameValuesForSameParametersToolStripMenuItem.CheckOnClick = True
         Me.UseSameValuesForSameParametersToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked
         Me.UseSameValuesForSameParametersToolStripMenuItem.Name = "UseSameValuesForSameParametersToolStripMenuItem"
-        Me.UseSameValuesForSameParametersToolStripMenuItem.Size = New System.Drawing.Size(315, 22)
-        Me.UseSameValuesForSameParametersToolStripMenuItem.Text = "Use same values for same parameters"
+        Me.UseSameValuesForSameParametersToolStripMenuItem.Size = New System.Drawing.Size(372, 22)
+        Me.UseSameValuesForSameParametersToolStripMenuItem.Text = "Use same values for same parameters in different reports"
         '
         'CombineMultipleReportsIntoOnePDFOnlyToolStripMenuItem
         '
         Me.CombineMultipleReportsIntoOnePDFOnlyToolStripMenuItem.CheckOnClick = True
         Me.CombineMultipleReportsIntoOnePDFOnlyToolStripMenuItem.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.OnlyRenderTheFirstPageOfEachReportToolStripMenuItem})
         Me.CombineMultipleReportsIntoOnePDFOnlyToolStripMenuItem.Name = "CombineMultipleReportsIntoOnePDFOnlyToolStripMenuItem"
-        Me.CombineMultipleReportsIntoOnePDFOnlyToolStripMenuItem.Size = New System.Drawing.Size(315, 22)
+        Me.CombineMultipleReportsIntoOnePDFOnlyToolStripMenuItem.Size = New System.Drawing.Size(372, 22)
         Me.CombineMultipleReportsIntoOnePDFOnlyToolStripMenuItem.Text = "Combine multiple reports into one (PDF only)"
         '
         'OnlyRenderTheFirstPageOfEachReportToolStripMenuItem
@@ -180,6 +181,13 @@ Partial Class Form1
         Me.PictureBox1.TabIndex = 10
         Me.PictureBox1.TabStop = False
         Me.PictureBox1.Visible = False
+        '
+        'FactbookMenuItem
+        '
+        Me.FactbookMenuItem.Name = "FactbookMenuItem"
+        Me.FactbookMenuItem.Size = New System.Drawing.Size(372, 22)
+        Me.FactbookMenuItem.Text = "Export Factbook"
+        Me.FactbookMenuItem.CheckOnClick = True
         '
         'Form1
         '
@@ -220,4 +228,5 @@ Partial Class Form1
     Friend WithEvents ExcelToolStripMenuItem1 As ToolStripMenuItem
     Friend WithEvents WordToolStripMenuItem1 As ToolStripMenuItem
     Friend WithEvents PictureBox1 As PictureBox
+    Friend WithEvents FactbookMenuItem As ToolStripMenuItem
 End Class
