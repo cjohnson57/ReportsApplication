@@ -569,6 +569,12 @@ Public Class Form1
                         Dim frm3 As Form3 = New Form3
                         frm3.ShowDialog()
                         filenametemp = ""
+                    ElseIf (parishreports And tempadomdparameter.ParamVar = "Parish") Then 'Must reset parish for each report
+                        AdomdParameters.RemoveAll(AddressOf ParishParamPredicate)
+                        filenametemp = filename
+                        Dim frm3 As Form3 = New Form3
+                        frm3.ShowDialog()
+                        filenametemp = ""
                     End If
                 End If
             Next
@@ -684,6 +690,10 @@ Public Class Form1
         Return str
     End Function
 
+    Private Shared Function ParishParamPredicate(param As ParameterAdomd) As Boolean
+        Return param.ParamVar = "Parish"
+    End Function
+
     Public Class GlobalVariables 'Necessary because of these variables' use in different forms, also helpful because of how many different functions use them
         'Variables for SQL parameters
         Public Shared SQLParameters As List(Of ParameterSQL) = New List(Of ParameterSQL)
@@ -701,6 +711,9 @@ Public Class Form1
         Public Shared wereerrors As Boolean = False
         Public Shared errormessages As New List(Of String)
         Public Shared filenametemp As String = ""
+        'For factbook parish reports
+        Public Shared parishreports As Boolean = False
+        Public Shared parishiteration As Integer = 0
     End Class
 
     Private Sub ClearGlobalVariables() 'Clears all the global variables
@@ -786,48 +799,29 @@ Public Class Form1
                 End If
 
                 For Each file In OpenFileDialog2.FileNames 'For each file, sets the report/parameters, renders them, saves them to the drive
-                    ReportViewer1.LocalReport.DataSources.Clear()
-                    ReportViewer1.LocalReport.ReportPath = OpenFileDialog2.FileNames(filenum) 'Sets the report equal to the file chosen by the user
-                    SetData(UseSameValuesForSameParametersToolStripMenuItem.Checked, OpenFileDialog2.SafeFileNames(filenum)) 'Sets the source for the data, finds the query, and populates the data table
-                    bytes = ReportViewer1.LocalReport.Render(filetype)
-
-                    If ((CombineMultipleReportsIntoOnePDFOnlyToolStripMenuItem.Checked And filetype = "PDF" Or FactbookMenuItem.Checked) And Not (FactbookMenuItem.Checked And OpenFileDialog2.SafeFileNames(filenum) = "Blank Report.rdl")) Then
-                        Dim MS As MemoryStream = New MemoryStream(bytes)
-                        Dim tempPDFDoc As PdfDocument = PdfReader.Open(MS, PdfDocumentOpenMode.Import)
-                        Dim pagestorender As Integer
-                        If (OnlyRenderTheFirstPageOfEachReportToolStripMenuItem.Checked Or FactbookMenuItem.Checked) Then
-                            pagestorender = 0
-                        Else
-                            pagestorender = tempPDFDoc.Pages.Count - 1
-                        End If
-                        If (FactbookMenuItem.Checked And Not (Blank Is New PdfPage)) Then 'Must check to see if blank pages should be added
-                            Dim newnum As Integer = Integer.Parse(OpenFileDialog2.SafeFileNames(filenum).Split("-"c)(0)) 'Gets page number
-                            If newnum - previousnum > 1 Then 'If there is a difference of greater than one
-                                For i As Integer = 0 To newnum - previousnum - 2 'Run once for every difference greater than 1
-                                    pdfDoc.AddPage(Blank) 'Add to pdf
-                                Next
-                            End If
-                            previousnum = newnum
-                        End If
-                        For i As Integer = 0 To pagestorender
-                            Dim page As PdfPage = tempPDFDoc.Pages(i)
-                            pdfDoc.AddPage(page)
-                        Next
-
-                        If (combinedfilename.Contains(".pdf")) Then
-                            pdfDoc.Save(filepath + "\" + combinedfilename)
-                        Else
-                            pdfDoc.Save(filepath + "\" + combinedfilename + ".pdf")
-                        End If
-                    ElseIf (Not (FactbookMenuItem.Checked And OpenFileDialog2.SafeFileNames(filenum) = "Blank Report.rdl")) Then
-                        Dim filename As String
-                        filename = OpenFileDialog2.SafeFileNames(filenum).Replace(".rdlc", fileextension)
-                        filename = filename.Replace(".rdl", fileextension)
-                        Dim fs As New FileStream(filepath + "\" + filename, FileMode.Create)
-                        fs.Write(bytes, 0, bytes.Length)
-                        fs.Close()
+                    Dim newnum As Integer = 0
+                    If FactbookMenuItem.Checked And Not OpenFileDialog2.SafeFileNames(filenum) = "Blank Report.rdl" Then
+                        newnum = Integer.Parse(OpenFileDialog2.SafeFileNames(filenum).Split("-"c)(0)) 'Gets page number
                     End If
-
+                    If newnum = 75 And FactbookMenuItem.Checked Then 'The part of factbook where it renders same report for each parish
+                        parishreports = True
+                        While (parishiteration < 65) 'Must render report once for each parish + Louisiana as a whole
+                            ReportViewer1.LocalReport.DataSources.Clear()
+                            ReportViewer1.LocalReport.ReportPath = OpenFileDialog2.FileNames(filenum) 'Sets the report equal to the file chosen by the user
+                            SetData(UseSameValuesForSameParametersToolStripMenuItem.Checked, OpenFileDialog2.SafeFileNames(filenum)) 'Sets the source for the data, finds the query, and populates the data table
+                            bytes = ReportViewer1.LocalReport.Render(filetype)
+                            HandleRendered(bytes, newnum, filetype, Blank, pdfDoc, filenum, filepath, fileextension, previousnum)
+                            parishiteration += 1 'Determines which parish to use as parameter
+                        End While
+                        parishreports = False
+                        parishiteration = 0
+                    Else 'Normal render
+                        ReportViewer1.LocalReport.DataSources.Clear()
+                        ReportViewer1.LocalReport.ReportPath = OpenFileDialog2.FileNames(filenum) 'Sets the report equal to the file chosen by the user
+                        SetData(UseSameValuesForSameParametersToolStripMenuItem.Checked, OpenFileDialog2.SafeFileNames(filenum)) 'Sets the source for the data, finds the query, and populates the data table
+                        bytes = ReportViewer1.LocalReport.Render(filetype)
+                        HandleRendered(bytes, newnum, filetype, Blank, pdfDoc, filenum, filepath, fileextension, previousnum)
+                    End If
                     filenum += 1
                 Next
 
@@ -850,6 +844,46 @@ Public Class Form1
                 wereerrors = False
                 errormessages.Clear()
             End If
+        End If
+    End Sub
+
+    Private Sub HandleRendered(bytes As Byte(), newnum As Integer, filetype As String, Blank As PdfPage, ByRef pdfDoc As PdfDocument, filenum As Integer, filepath As String, fileextension As String, ByRef previousnum As Integer)
+        If ((CombineMultipleReportsIntoOnePDFOnlyToolStripMenuItem.Checked And filetype = "PDF" Or FactbookMenuItem.Checked) And Not (FactbookMenuItem.Checked And OpenFileDialog2.SafeFileNames(filenum) = "Blank Report.rdl")) Then
+
+
+            Dim MS As MemoryStream = New MemoryStream(bytes)
+            Dim tempPDFDoc As PdfDocument = PdfReader.Open(MS, PdfDocumentOpenMode.Import)
+            Dim pagestorender As Integer
+            If (OnlyRenderTheFirstPageOfEachReportToolStripMenuItem.Checked Or FactbookMenuItem.Checked) Then
+                pagestorender = 0
+            Else
+                pagestorender = tempPDFDoc.Pages.Count - 1
+            End If
+            If (FactbookMenuItem.Checked And Not (Blank Is New PdfPage)) Then 'Must check to see if blank pages should be added
+                If newnum - previousnum > 1 And Not (newnum = 140) Then 'If there is a difference of greater than one and it's not from the parish reports
+                    For i As Integer = 0 To newnum - previousnum - 2 'Run once for every difference greater than 1
+                        pdfDoc.AddPage(Blank) 'Add to pdf
+                    Next
+                End If
+                previousnum = newnum
+            End If
+            For i As Integer = 0 To pagestorender
+                Dim page As PdfPage = tempPDFDoc.Pages(i)
+                pdfDoc.AddPage(page)
+            Next
+
+            If (combinedfilename.Contains(".pdf")) Then
+                pdfDoc.Save(filepath + "\" + combinedfilename)
+            Else
+                pdfDoc.Save(filepath + "\" + combinedfilename + ".pdf")
+            End If
+        ElseIf (Not (FactbookMenuItem.Checked And OpenFileDialog2.SafeFileNames(filenum) = "Blank Report.rdl")) Then
+            Dim filename As String
+            filename = OpenFileDialog2.SafeFileNames(filenum).Replace(".rdlc", fileextension)
+            filename = filename.Replace(".rdl", fileextension)
+            Dim fs As New FileStream(filepath + "\" + filename, FileMode.Create)
+            fs.Write(bytes, 0, bytes.Length)
+            fs.Close()
         End If
     End Sub
 

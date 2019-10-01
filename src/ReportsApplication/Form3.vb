@@ -69,7 +69,12 @@ Public Class Form3
                 skippedone = True
             End If
         Next
-        If ComboBox1.Items.Count = 1 Then
+        If parishreports = True And tempadomdparameter.ParamVar.Replace("@", "") = "Parish" Then 'Don't ask user when doing parish reports for factbook
+            tempadomdparameter.Parameter = ComboBox1.Items(parishiteration).ToString()
+            tempadomdparameter.QueryValues = tbl.Rows(parishiteration).ItemArray(k).ToString()
+            AdomdParameters.Add(tempadomdparameter)
+            Close()
+        ElseIf ComboBox1.Items.Count = 1 Then
             tempadomdparameter.Parameter = ComboBox1.Items(0).ToString()
             tempadomdparameter.QueryValues = tbl.Rows(0).ItemArray(k).ToString()
             AdomdParameters.Add(tempadomdparameter)
