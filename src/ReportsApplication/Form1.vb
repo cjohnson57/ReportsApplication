@@ -9,14 +9,43 @@ Imports PdfSharp.Pdf.IO
 
 Public Class Form1
 
+    Private Datasets As List(Of Dataset)
+    Private filename As String
+
     Private Sub Form1_Load(ByVal sender As Object, ByVal e As EventArgs) Handles MyBase.Load
+        OnloadUI() 'Set some positionings
         ReportViewer1.RefreshReport()
+        Refresh_ListView()
+        AddHandler ListView1.SelectedIndexChanged, Sub(s, ea)
+                                                       Dim filename = ListView1.Items(ListView1.FocusedItem.Index).Name
+                                                       Open(filename)
+                                                   End Sub
+
         Me.Text = System.Configuration.ConfigurationSettings.AppSettings.Get("title")
         'Me.ForeColor = Color.FromName(System.Configuration.ConfigurationSettings.AppSettings.Get("Background Color"))
         If Not String.IsNullOrEmpty(System.Configuration.ConfigurationSettings.AppSettings.Get("Icon").ToString()) Then
             Me.Icon = New System.Drawing.Icon(System.Configuration.ConfigurationSettings.AppSettings.Get("Icon"))
         End If
         FactbookMenuItem.Checked = Boolean.Parse(System.Configuration.ConfigurationSettings.AppSettings.Get("Factbook Default"))
+    End Sub
+
+    Public Sub Refresh_ListView()
+        If Not String.IsNullOrEmpty(System.Configuration.ConfigurationSettings.AppSettings.Get("Report Directory")) Then
+            Dim Folder As New System.IO.DirectoryInfo(System.Configuration.ConfigurationSettings.AppSettings.Get("Report Directory"))
+            ListView1.Items.Clear()
+            For Each File As System.IO.FileInfo In Folder.GetFiles("*.rdl", System.IO.SearchOption.TopDirectoryOnly)
+                Dim item As New ListViewItem
+                item.Text = File.Name
+                item.Name = File.FullName
+                ListView1.Items.Add(item)
+            Next
+            For Each File As System.IO.FileInfo In Folder.GetFiles("*.rdlc", System.IO.SearchOption.TopDirectoryOnly)
+                Dim item As New ListViewItem
+                item.Text = File.Name
+                item.Name = File.FullName
+                ListView1.Items.Add(item)
+            Next
+        End If
     End Sub
 
     Public Structure Dataset
@@ -31,7 +60,7 @@ Public Class Form1
         Public IsAnalysis As Boolean
         Public ConnectionString As String
     End Structure
-    Public Structure ParameterSQL 'I know the SQL and Adomd structs are exactly the same, but I do this to make sure I don't accidentally add a parameter to the wrong list.
+    Public Class ParameterSQL 'I know the SQL and Adomd structs are exactly the same, but I do this to make sure I don't accidentally add a parameter to the wrong list.
         Public Parameter As String
         Public ParamVar As String
         Public ConnectionString As String
@@ -41,8 +70,27 @@ Public Class Form1
         Public DataType As String
         Public ValueField As String
         Public LabelField As String
-    End Structure
-    Public Structure ParameterAdomd
+
+        Public Function Clone() As ParameterSQL
+            Dim copy As ParameterSQL = New ParameterSQL()
+            copy.Parameter = Parameter
+            copy.ParamVar = ParamVar
+            copy.ConnectionString = ConnectionString
+            copy.Query = Query
+            copy.QueryValues = QueryValues
+            copy.Dataset = Dataset
+            copy.DataType = DataType
+            copy.ValueField = ValueField
+            copy.LabelField = LabelField
+            Return copy
+        End Function
+
+        Public Overrides Function ToString() As String
+            Return Parameter
+        End Function
+
+    End Class
+    Public Class ParameterAdomd
         Public Parameter As String
         Public ParamVar As String
         Public ConnectionString As String
@@ -52,25 +100,60 @@ Public Class Form1
         Public DataType As String
         Public ValueField As String
         Public LabelField As String
-    End Structure
+
+        Public Function Clone() As ParameterAdomd
+            Dim copy As ParameterAdomd = New ParameterAdomd()
+            copy.Parameter = Parameter
+            copy.ParamVar = ParamVar
+            copy.ConnectionString = ConnectionString
+            copy.Query = Query
+            copy.QueryValues = QueryValues
+            copy.Dataset = Dataset
+            copy.DataType = DataType
+            copy.ValueField = ValueField
+            copy.LabelField = LabelField
+            Return copy
+        End Function
+
+        Public Overrides Function ToString() As String
+            Return Parameter
+        End Function
+
+    End Class
+
+    Private Sub Open(filename)
+        FlowLayoutPanel1.Controls.Clear()
+        ClearGlobalVariables()
+        ReportViewer1.LocalReport.DataSources.Clear()
+        ReportViewer1.LocalReport.ReportPath = filename 'Sets the report equal to the file chosen by the user
+        Me.filename = Path.GetFileName(filename)
+        SetData(False, Me.filename) 'Sets the parameters, adds data sets, replaces fields, renders report
+        Text = "Report Viewer - " + Me.filename 'Places the name of the report in the control's title bar
+        ReportViewer1.RefreshReport() 'Used to show the new report
+        If System.Configuration.ConfigurationSettings.AppSettings.Get("MODE") <> "Viewer" Then
+            ReportViewer1.RefreshReport() 'Used to show the new report
+        End If
+    End Sub
 
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
         OpenFileDialog1.Filter = "Report Files|*.rdlc;*.rdl"
         OpenFileDialog1.FileName = ""
         OpenFileDialog1.ShowDialog()
         If (OpenFileDialog1.FileName <> "") Then 'Makes sure a file was chosen, if not the dialog box just closes
-            ReportViewer1.LocalReport.DataSources.Clear()
-            ReportViewer1.LocalReport.ReportPath = OpenFileDialog1.FileName 'Sets the report equal to the file chosen by the user
-            SetData(False, OpenFileDialog1.SafeFileName) 'Sets the parameters, adds data sets, replaces fields, renders report
-            Text = "Report Viewer - " + OpenFileDialog1.SafeFileName 'Places the name of the report in the control's title bar
-            ReportViewer1.RefreshReport() 'Used to show the new report
+            Dim directory = Path.GetDirectoryName(OpenFileDialog1.FileName)
+            System.Configuration.ConfigurationSettings.AppSettings.Set("Report Directory", directory)
+            Refresh_ListView()
+            Open(OpenFileDialog1.FileName)
         End If
-        DeleteFilesFromFolder() 'Clears all .rdl and .rdlc files from the application's folder
+        If System.Configuration.ConfigurationSettings.AppSettings.Get("MODE") <> "Viewer" Then
+            DeleteFilesFromFolder() 'Clears all .rdl and .rdlc files from the application's folder
+        End If
         PictureBox1.Visible = False 'Hides loading icon
     End Sub
 
     Private Sub SetData(saveparameters As Boolean, filename As String)
         PictureBox1.Visible = True 'Displays loading icon
+        SetVisibility()
 
         Dim filereaderdatasources As String = My.Computer.FileSystem.ReadAllText(ReportViewer1.LocalReport.ReportPath) 'Reads the report's xml data for data source purposes
         Dim filereaderdatasets As String = My.Computer.FileSystem.ReadAllText(ReportViewer1.LocalReport.ReportPath) 'Reads the report's xml data for data set purposes
@@ -81,7 +164,7 @@ Public Class Form1
 
         Dim DataSources As List(Of Datasource) = New List(Of Datasource)
 
-        Dim DataSets As List(Of Dataset) = New List(Of Dataset)
+        Me.Datasets = New List(Of Dataset)
 
         FindNameSpace(filereaderdatasets)
 
@@ -154,7 +237,7 @@ Public Class Form1
 
         ReplaceFields(filename) 'Replaces fields, required for AS reports 
 
-        If (Not saveparameters) Then 'Clears variables unless rendering multiple reports
+        If (Not saveparameters And System.Configuration.ConfigurationSettings.AppSettings.Get("MODE") <> "Viewer") Then 'Clears variables unless rendering multiple reports
             ClearGlobalVariables()
         End If
 
@@ -260,7 +343,9 @@ Public Class Form1
 
         For Each item In report.Root.Descendants(NS + "Fields")
             While True 'Makes sure the dataset has datafields
-                If (ReportViewer1.LocalReport.DataSources(i).Value.Columns.Count = 0) Then 'If there are no fields, just increments i by 1 so it can go to the next source
+                If (ReportViewer1.LocalReport.DataSources Is Nothing) Then 'If there are no fields, just increments i by 1 so it can go to the next source
+                    i += 1
+                ElseIf (ReportViewer1.LocalReport.DataSources(i).Value.Columns.Count = 0) Then
                     i += 1
                 Else
                     Exit While
@@ -455,11 +540,16 @@ Public Class Form1
                     End If
                 Next
                 If (adomdbutnodataset) Then 'This is for the case where there is an ADOMD parameter that uses a list of values rather than a data set
-                    For Each item2 In item3.Descendants(NS + "Label")
+                    For Each item2 In item3.Descendants(NS + "Value")
                         adomdvalues.Add(item2.Value)
                     Next
+                    For Each item2 In item3.Descendants(NS + "Label")
+                        adomdlabels.Add(item2.Value)
+                    Next
+                    issql = False
                     SetParametersAdomd(DataSets, "adomdbutnodataset", paramvar, filename, datatype, valuefield, labelfield)
                     adomdvalues.Clear()
+                    adomdlabels.Clear()
                 End If
             Next
             If (issql And (Not alreadyset)) Then
@@ -473,26 +563,73 @@ Public Class Form1
         tempsqlparameter.ParamVar = paramvar
         tempsqlparameter.DataType = datatype
         If (datatype = "DateTime") Then 'Checks if the parameter is datetime or not, since it requires a different form with a datetime picker
-            If SQLParameters.Count() = 0 Then 'If there are no parameters currently just adds it. Otherwise checks to make sure the parameter doesn't already exist.
-                Dim frm6 As Form6 = New Form6
-                frm6.ShowDialog() 'Opens the 2nd form used for setting the parameter
-            ElseIf (CheckArray("SQL", tempsqlparameter.ParamVar, SQLParameters.Count())) Then
-                Dim frm6 As Form6 = New Form6
-                frm6.ShowDialog() 'Opens the 2nd form used for setting the parameter
+            If (CheckArray("SQL", tempsqlparameter.ParamVar, SQLParameters.Count())) Then 'If not already added
+                Dim mode = System.Configuration.ConfigurationSettings.AppSettings.Get("MODE")
+                If mode.ToUpper() <> "VIEWER" Then
+                    Dim frm6 As Form6 = New Form6
+                    frm6.ShowDialog() 'Opens the 2nd form used for setting the parameter`
+                Else
+                    Dim datepickerparam = New DateTimePicker
+                    datepickerparam.Name = paramvar
+                    ' Add Label
+                    Dim label = New Label
+                    label.AutoSize = True
+                    label.Padding = New Padding(10, 5, 5, 10)
+                    label.Text = tempsqlparameter.ParamVar
+                    FlowLayoutPanel1.Controls.Add(label)
+                    ' Add control to flow panel and define its handler
+                    FlowLayoutPanel1.Controls.Add(datepickerparam)
+                    datepickerparam.Value = DateTime.Now
+                    tempsqlparameter.Parameter = datepickerparam.Value
+                    SQLParameters.Add(tempsqlparameter)
+                    AddHandler datepickerparam.ValueChanged, Sub(s, ea)
+                                                                 Dim oldvalue As ParameterSQL
+                                                                 oldvalue = SQLParameters.Find(Function(x) x.ParamVar = datepickerparam.Name)
+                                                                 Dim newvalue = oldvalue
+                                                                 newvalue.Parameter = datepickerparam.Value
+                                                                 SQLParameters.Remove(oldvalue)
+                                                                 SQLParameters.Add(newvalue)
+                                                             End Sub
+                End If
             End If
         Else
-            If SQLParameters.Count() = 0 Then 'If there are no parameters currently just adds it. Otherwise checks to make sure the parameter doesn't already exist.
-                Dim frm2 As Form2 = New Form2
-                frm2.ShowDialog() 'Opens the 2nd form used for setting the parameter
-            ElseIf (CheckArray("SQL", tempsqlparameter.ParamVar, SQLParameters.Count())) Then
-                Dim frm2 As Form2 = New Form2
-                frm2.ShowDialog() 'Opens the 2nd form used for setting the parameter
+            If (CheckArray("SQL", tempsqlparameter.ParamVar, SQLParameters.Count())) Then 'If not already added
+                Dim mode = System.Configuration.ConfigurationSettings.AppSettings.Get("MODE")
+                If mode.ToUpper() <> "VIEWER" Then
+                    Dim frm2 As Form2 = New Form2
+                    frm2.ShowDialog() 'Opens the 2nd form used for setting the parameter
+                Else
+                    Dim textboxparam = New TextBox
+                    textboxparam.Name = paramvar
+                    ' Add Label
+                    Dim label = New Label
+                    label.AutoSize = True
+                    label.Padding = New Padding(10, 5, 5, 10)
+                    label.Text = tempsqlparameter.ParamVar
+                    FlowLayoutPanel1.Controls.Add(label)
+                    ' Add control to flow panel and define its handler
+                    FlowLayoutPanel1.Controls.Add(textboxparam)
+                    textboxparam.Text = ""
+                    tempsqlparameter.Parameter = textboxparam.Text
+                    SQLParameters.Add(tempsqlparameter)
+                    AddHandler textboxparam.TextChanged, Sub(s, ea)
+                                                             Dim oldvalue As ParameterSQL
+                                                             oldvalue = SQLParameters.Find(Function(x) x.ParamVar = textboxparam.Name)
+                                                             Dim newvalue = oldvalue
+                                                             newvalue.Parameter = textboxparam.Text
+                                                             SQLParameters.Remove(oldvalue)
+                                                             SQLParameters.Add(newvalue)
+                                                         End Sub
+                End If
             End If
         End If
     End Sub
 
     Private Sub SetParametersSQLQuery(DataSets As List(Of Dataset), paramdataset As String, paramvar As String, filename As String, datatype As String, valuefield As String, labelfield As String)
         Dim report = XDocument.Load(ReportViewer1.LocalReport.ReportPath) 'This xml file is a copy of the original report
+        Dim tbl As DataTable
+        Dim k As Integer
+        Dim skippedone As Boolean
         For Each item In report.Root.Descendants(NS + "DataSet") 'Goes through the xml to find the data sets that are actually parameters to get their names and queries
             If (item.FirstAttribute.Value = paramdataset) Then
                 tempsqlparameter = New ParameterSQL
@@ -510,16 +647,93 @@ Public Class Form1
                         Exit For
                     End If
                 Next
-                If SQLParameters.Count() = 0 Then 'If there are no parameters currently just adds it. Otherwise checks to make sure the parameter doesn't already exist.
-                    filenametemp = filename
-                    Dim frm7 As Form7 = New Form7
-                    frm7.ShowDialog()
-                    filenametemp = ""
-                ElseIf (CheckArray("SQL", tempsqlparameter.ParamVar, SQLParameters.Count())) Then
-                    filenametemp = filename
-                    Dim frm7 As Form7 = New Form7
-                    frm7.ShowDialog()
-                    filenametemp = ""
+                If (CheckArray("SQL", tempsqlparameter.ParamVar, SQLParameters.Count())) Then 'If not already added
+                    Dim mode = System.Configuration.ConfigurationSettings.AppSettings.Get("MODE")
+                    If mode.ToUpper() <> "VIEWER" Then
+                        Dim frm7 As Form7 = New Form7
+                        frm7.ShowDialog()
+                    Else
+                        Dim cn = New SqlConnection(tempsqlparameter.ConnectionString)
+                        Dim da As SqlDataAdapter = New SqlDataAdapter()
+                        Dim cmd = New SqlCommand(tempsqlparameter.Query, cn)
+                        tbl = New DataTable
+
+                        If (SQLParameters.Count > 0) Then 'If there are parameters, adds them to the command using the parameters found in the SetParameters function
+                            For l As Integer = 0 To (SQLParameters.Count - 1)
+                                cmd.Parameters.AddWithValue(SQLParameters(l).ParamVar, SQLParameters(l).Parameter)
+                            Next
+                        End If
+
+                        If (AdomdParameters.Count() > 0) Then 'It's possible for a SQL connection to use AS parameters, so they too must be added
+                            For l As Integer = 0 To (AdomdParameters.Count() - 1)
+                                If (AdomdParameters(l).ConnectionString = "NODATASET") Then
+                                    cmd.Parameters.AddWithValue(AdomdParameters(l).ParamVar, AdomdParameters(l).Parameter)
+                                Else
+                                    cmd.Parameters.AddWithValue(AdomdParameters(l).ParamVar, AdomdParameters(l).QueryValues)
+                                End If
+                            Next
+                        End If
+
+                        da.SelectCommand = cmd
+                        Try
+                            cn.Open()
+                            da.Fill(tbl)
+                            cn.Close()
+                        Catch ex As Exception
+                            If (renderingmultiple) Then
+                                wereerrors = True
+                                errormessages.Add("Error in connection for parameter " + tempsqlparameter.ParamVar.Replace("@", "") + "'s dataset in report " + filenametemp + Environment.NewLine + ex.Message)
+                            Else
+                                MsgBox("Error in connection for parameter " + tempsqlparameter.ParamVar.Replace("@", "") + "'s dataset in report " + filenametemp + Environment.NewLine + ex.Message)
+                            End If
+                        End Try
+
+                        Dim firstset As Boolean = True
+                        Dim j As Integer = 0
+                        k = 0
+                        For i As Integer = 0 To (tbl.Columns.Count - 1)
+                            If tempsqlparameter.LabelField.Contains(Me.ValueCheckFunction(tbl.Columns(i).ColumnName)) Then
+                                j = i
+                            End If
+                            If tempsqlparameter.ValueField.Contains(Me.ValueCheckFunction(tbl.Columns(i).ColumnName)) Then
+                                k = i
+                            End If
+                        Next
+                        skippedone = False
+
+                        Dim combobox = New ComboBox()
+                        combobox.DropDownStyle = ComboBoxStyle.DropDownList
+                        For i As Integer = 0 To (tbl.Rows.Count - 1)
+                            If (tbl.Rows(i).ItemArray(j).ToString <> "All") Then
+                                Dim newasqlparam As ParameterSQL = tempsqlparameter.Clone()
+                                newasqlparam.Parameter = tbl.Rows(i).ItemArray(j).ToString()
+                                newasqlparam.QueryValues = tbl.Rows(i).ItemArray(0).ToString()
+                                combobox.Items.Add(newasqlparam)
+                            Else
+                                skippedone = True
+                            End If
+                        Next
+                        combobox.SelectedIndex = 0
+                        Dim initialitem As ParameterSQL = combobox.SelectedItem
+                        SQLParameters.Add(combobox.SelectedItem)
+                        ' Add Label
+                        Dim label = New Label
+                        label.AutoSize = True
+                        label.Padding = New Padding(10, 5, 5, 10)
+                        label.Text = tempsqlparameter.ParamVar
+                        FlowLayoutPanel1.Controls.Add(label)
+                        ' Add control to flow panel and define its handler
+                        FlowLayoutPanel1.Controls.Add(combobox)
+                        AddHandler combobox.SelectedIndexChanged, Sub(s, ea)
+                                                                      Dim index As Integer = combobox.SelectedIndex
+                                                                      Dim param As ParameterSQL = combobox.SelectedItem
+                                                                      Dim oldvalue As ParameterSQL
+                                                                      oldvalue = SQLParameters.Find(Function(x) x.ParamVar = param.ParamVar)
+                                                                      SQLParameters.Remove(oldvalue)
+                                                                      SQLParameters.Add(param)
+
+                                                                  End Sub
+                    End If
                 End If
             End If
         Next
@@ -527,6 +741,9 @@ Public Class Form1
 
     Private Sub SetParametersAdomd(DataSets As List(Of Dataset), paramdataset As String, paramvar As String, filename As String, datatype As String, valuefield As String, labelfield As String)
         Dim report = XDocument.Load(ReportViewer1.LocalReport.ReportPath) 'This xml file is a copy of the original report
+        Dim tbl As DataTable
+        Dim k As Integer
+        Dim skippedone As Boolean
         If (paramdataset = "adomdbutnodataset") Then 'For the case where there is no dataset and the parameter uses a list instead.
             tempadomdparameter = New ParameterAdomd
             tempadomdparameter.ParamVar = paramvar
@@ -534,12 +751,54 @@ Public Class Form1
             tempadomdparameter.Dataset = "NODATASET"
             tempadomdparameter.ValueField = valuefield
             tempadomdparameter.LabelField = labelfield
-            If AdomdParameters.Count = 0 Then
-                Dim frm4 As Form4 = New Form4
-                frm4.ShowDialog()
-            ElseIf (CheckArray("Adomd", tempadomdparameter.ParamVar, AdomdParameters.Count())) Then
-                Dim frm4 As Form4 = New Form4
-                frm4.ShowDialog()
+            If (CheckArray("Adomd", tempadomdparameter.ParamVar, AdomdParameters.Count())) Then 'If not already added
+                Dim mode = System.Configuration.ConfigurationSettings.AppSettings.Get("MODE")
+                If mode.ToUpper() <> "VIEWER" Then
+                    Dim frm4 As Form4 = New Form4
+                    frm4.ShowDialog()
+                Else
+                    Dim firstset As Boolean = True
+                    Dim combobox = New ComboBox()
+                    combobox.DropDownStyle = ComboBoxStyle.DropDownList
+                    For i As Integer = 0 To (adomdlabels.Count - 1)
+                        Dim item As New ParameterAdomd
+                        item.Parameter = adomdlabels(i)
+                        item.QueryValues = adomdvalues(i)
+                        item.ParamVar = tempadomdparameter.ParamVar
+                        item.LabelField = tempadomdparameter.LabelField
+                        item.DataType = tempadomdparameter.DataType
+                        item.Dataset = tempadomdparameter.Dataset
+                        item.ConnectionString = tempadomdparameter.ConnectionString
+                        item.Query = tempadomdparameter.Query
+                        item.ValueField = tempadomdparameter.ValueField
+                        combobox.Items.Add(item)
+                        If firstset Then
+                            combobox.Text = item.ToString()
+                            firstset = False
+                        End If
+                    Next
+                    Dim initialitem As ParameterAdomd = combobox.SelectedItem
+                    tempadomdparameter.Parameter = initialitem.Parameter
+                    tempadomdparameter.QueryValues = initialitem.QueryValues
+                    AdomdParameters.Add(tempadomdparameter)
+                    ' Add Label
+                    Dim label = New Label
+                    label.AutoSize = True
+                    label.Padding = New Padding(10, 5, 5, 10)
+                    label.Text = tempadomdparameter.ParamVar
+                    FlowLayoutPanel1.Controls.Add(label)
+                    ' Add control to flow panel and define its handler
+                    FlowLayoutPanel1.Controls.Add(combobox)
+                    AddHandler combobox.SelectedIndexChanged, Sub(s, ea)
+                                                                  Dim index As Integer = combobox.SelectedIndex
+                                                                  Dim item As ParameterAdomd = combobox.SelectedItem
+                                                                  Dim oldvalue As ParameterAdomd
+                                                                  oldvalue = AdomdParameters.Find(Function(x) x.ParamVar = item.ParamVar)
+                                                                  AdomdParameters.Remove(oldvalue)
+                                                                  AdomdParameters.Add(item)
+
+                                                              End Sub
+                End If
             End If
         Else
             For Each item In report.Root.Descendants(NS + "DataSet") 'Goes through the xml to find the data sets that are actually parameters to get their names and queries
@@ -559,16 +818,98 @@ Public Class Form1
                             Exit For
                         End If
                     Next
-                    If AdomdParameters.Count() = 0 Then 'If there are no parameters currently just adds it. Otherwise checks to make sure the parameter doesn't already exist.
-                        filenametemp = filename
-                        Dim frm3 As Form3 = New Form3
-                        frm3.ShowDialog()
-                        filenametemp = ""
-                    ElseIf (CheckArray("Adomd", tempadomdparameter.ParamVar, AdomdParameters.Count())) Then
-                        filenametemp = filename
-                        Dim frm3 As Form3 = New Form3
-                        frm3.ShowDialog()
-                        filenametemp = ""
+                    If (CheckArray("Adomd", tempadomdparameter.ParamVar, AdomdParameters.Count())) Then 'If not already added
+                        Dim mode = System.Configuration.ConfigurationSettings.AppSettings.Get("MODE")
+                        If mode.ToUpper() <> "VIEWER" Then
+                            Dim frm3 As Form3 = New Form3
+                            frm3.ShowDialog()
+                        Else
+                            'Label1.Text = "Enter the value for parameter " + tempadomdparameter.ParamVar.Replace("@", "")
+                            Dim cn = New AdomdConnection(tempadomdparameter.ConnectionString)
+                            Dim da As AdomdDataAdapter = New AdomdDataAdapter()
+                            Dim cmd = New AdomdCommand(tempadomdparameter.Query, cn)
+                            tbl = New DataTable
+
+                            If (SQLParameters.Count > 0) Then 'It's possible for an AS connection to use SQL parameters, so they too must be added
+                                For l As Integer = 0 To (SQLParameters.Count - 1)
+                                    Dim p As New AdomdParameter(SQLParameters(l).ParamVar, SQLParameters(l).Parameter)
+                                    cmd.Parameters.Add(p)
+                                Next
+                            End If
+
+                            If (AdomdParameters.Count() > 0) Then 'If there are parameters, adds them to the command using the parameters found in the SetParameters function
+                                For l As Integer = 0 To (AdomdParameters.Count() - 1)
+                                    If (AdomdParameters(l).ConnectionString = "NODATASET") Then
+                                        Dim p As New AdomdParameter(AdomdParameters(l).ParamVar, AdomdParameters(l).Parameter)
+                                        cmd.Parameters.Add(p)
+                                    Else
+                                        Dim p As New AdomdParameter(AdomdParameters(l).ParamVar, AdomdParameters(l).QueryValues)
+                                        cmd.Parameters.Add(p)
+                                    End If
+                                Next
+                            End If
+
+                            da.SelectCommand = cmd
+                            Try
+                                cn.Open()
+                                da.Fill(tbl)
+                                cn.Close()
+                            Catch ex As Exception
+                                If (renderingmultiple) Then
+                                    wereerrors = True
+                                    errormessages.Add("Error in connection for parameter " + tempadomdparameter.ParamVar.Replace("@", "") + "'s dataset in report " + filenametemp + Environment.NewLine + ex.Message)
+                                Else
+                                    MsgBox("Error in connection for parameter " + tempadomdparameter.ParamVar.Replace("@", "") + "'s dataset in report " + filenametemp + Environment.NewLine + ex.Message)
+                                End If
+                            End Try
+
+                            Dim firstset As Boolean = True
+                            Dim j As Integer = 0
+                            k = 0
+                            For i As Integer = 0 To (tbl.Columns.Count - 1)
+                                If tempadomdparameter.LabelField.Contains(Me.ValueCheckFunction(tbl.Columns(i).ColumnName)) Then
+                                    j = i
+                                End If
+                                If tempadomdparameter.ValueField.Contains(Me.ValueCheckFunction(tbl.Columns(i).ColumnName)) Then
+                                    k = i
+                                End If
+                            Next
+                            skippedone = False
+
+                            Dim combobox = New ComboBox()
+                            combobox.DropDownStyle = ComboBoxStyle.DropDownList
+                            For i As Integer = 0 To (tbl.Rows.Count - 1)
+                                If (tbl.Rows(i).ItemArray(j).ToString <> "All") Then
+                                    Dim newadomdparam As ParameterAdomd = tempadomdparameter.Clone()
+                                    newadomdparam.Parameter = tbl.Rows(i).ItemArray(j).ToString()
+                                    newadomdparam.QueryValues = tbl.Rows(i).ItemArray(2).ToString()
+                                    combobox.Items.Add(newadomdparam)
+                                Else
+                                    skippedone = True
+                                End If
+                            Next
+                            combobox.SelectedIndex = 0
+                            Dim initialitem As ParameterAdomd = combobox.SelectedItem
+                            AdomdParameters.Add(combobox.SelectedItem)
+                            ' Add Label
+                            Dim label = New Label
+                            label.AutoSize = True
+                            label.Padding = New Padding(10, 5, 5, 10)
+                            label.Text = tempadomdparameter.ParamVar
+                            FlowLayoutPanel1.Controls.Add(label)
+                            ' Add control to flow panel and define its handler
+                            FlowLayoutPanel1.Controls.Add(combobox)
+                            AddHandler combobox.SelectedIndexChanged, Sub(s, ea)
+                                                                          Dim index As Integer = combobox.SelectedIndex
+                                                                          Dim param As ParameterAdomd = combobox.SelectedItem
+                                                                          Dim oldvalue As ParameterAdomd
+                                                                          oldvalue = AdomdParameters.Find(Function(x) x.ParamVar = param.ParamVar)
+                                                                          AdomdParameters.Remove(oldvalue)
+                                                                          AdomdParameters.Add(param)
+
+                                                                      End Sub
+
+                        End If
                     ElseIf (parishreports And tempadomdparameter.ParamVar = "Parish") Then 'Must reset parish for each report
                         AdomdParameters.RemoveAll(AddressOf ParishParamPredicate)
                         filenametemp = filename
@@ -580,6 +921,7 @@ Public Class Form1
             Next
         End If
     End Sub
+
 
     Private Sub SetParameterDataTypes()
         Dim fileReader As String
@@ -702,6 +1044,7 @@ Public Class Form1
         Public Shared AdomdParameters As List(Of ParameterAdomd) = New List(Of ParameterAdomd)
         Public Shared tempadomdparameter As ParameterAdomd = New ParameterAdomd
         Public Shared adomdvalues As List(Of String) = New List(Of String)
+        Public Shared adomdlabels As List(Of String) = New List(Of String)
         'Variable for rendering multiple reports into one PDF
         Public Shared combinedfilename As String
         'Variable for the namespace of the report
@@ -720,9 +1063,16 @@ Public Class Form1
         SQLParameters.Clear()
         AdomdParameters.Clear()
         NS = ""
+        If (Me.Datasets IsNot Nothing) Then
+            Me.Datasets.Clear()
+        End If
+        Me.filename = ""
     End Sub
 
     Private Function CheckArray(whicharray As String, value As String, count As Integer) 'Makes sure the parameter is not one that has already been assigned
+        If count = 0 Then
+            Return True
+        End If
         If (whicharray = "Adomd") Then
             For i As Integer = 0 To (count - 1)
                 If (AdomdParameters(i).ParamVar = value) Then
@@ -926,5 +1276,64 @@ Public Class Form1
 
     Private Sub ReportViewer1_Load(sender As Object, e As EventArgs) Handles ReportViewer1.Load
         ReportViewer1.LocalReport.ReportPath = System.Configuration.ConfigurationSettings.AppSettings.Get("Default Report")
+    End Sub
+
+    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click
+
+        ReportViewer1.LocalReport.DataSources.Clear()
+
+        For count = 0 To (Datasets.Count - 1) 'This while loop iterates once for each dataset, since each dataset has to be set and filled individually
+            If (Datasets(count).IsAnalysis) Then 'Checks whether or not the data source uses analysis services
+                Dim cn = New AdomdConnection(Datasets(count).ConnectionString) 'Sets the connection using the connection string found in the last block
+                ConnectAndFillAdomd(Datasets(count), cn, filename) 'Connects to the data source and fills the data set
+            Else
+                Dim cn = New SqlConnection(Datasets(count).ConnectionString) 'Sets the connection using the connection string found in the last block
+                ConnectAndFillSQL(Datasets(count), cn, filename) 'Connects to the data source and fills the data set
+            End If
+        Next
+
+        ReplaceFields(filename) 'Replaces fields, required for AS reports 
+        ReportViewer1.RefreshReport()
+    End Sub
+
+    Private Sub OnloadUI()
+        FlowLayoutPanel1.Visible = False
+        ReportViewer1.Location = New Point(ReportViewer1.Location.X, 0)
+        ListView1.Location = New Point(ListView1.Location.X, 0)
+        Button1.Location = New Point(Button1.Location.X, ReportViewer1.Location.Y + 1)
+        Button2.Location = New Point(Button2.Location.X, ReportViewer1.Location.Y + 1)
+        MenuStrip1.Location = New Point(MenuStrip1.Location.X, ReportViewer1.Location.Y + 1)
+        ReportViewer1.Height = Me.Height - 40
+        ListView1.Height = ReportViewer1.Height
+        If System.Configuration.ConfigurationSettings.AppSettings.Get("MODE") = "Viewer" Then
+            MenuStrip1.Items(0).Visible = False
+        Else
+            Button2.Visible = False
+        End If
+    End Sub
+
+    'Sets visibility and positioning depending on the mode
+    Private Sub SetVisibility()
+        If (ReportViewer1.LocalReport.GetParameters().Count > 0 And System.Configuration.ConfigurationSettings.AppSettings.Get("MODE") = "Viewer") Then
+            FlowLayoutPanel1.Visible = True
+            ReportViewer1.Location = New Point(ReportViewer1.Location.X, FlowLayoutPanel1.Location.Y + FlowLayoutPanel1.Size.Height + 3)
+            ReportViewer1.Height = 872
+            ListView1.Height = ReportViewer1.Height
+            ListView1.Location = New Point(ListView1.Location.X, FlowLayoutPanel1.Location.Y + FlowLayoutPanel1.Size.Height + 3)
+            Button1.Location = New Point(Button1.Location.X, ReportViewer1.Location.Y + 1)
+            Button2.Location = New Point(Button2.Location.X, ReportViewer1.Location.Y + 1)
+            MenuStrip1.Location = New Point(MenuStrip1.Location.X, ReportViewer1.Location.Y + 1)
+        Else
+            FlowLayoutPanel1.Visible = False
+            ReportViewer1.Location = New Point(ReportViewer1.Location.X, 0)
+            ListView1.Location = New Point(ListView1.Location.X, 0)
+            Button1.Location = New Point(Button1.Location.X, ReportViewer1.Location.Y + 1)
+            Button2.Location = New Point(Button2.Location.X, ReportViewer1.Location.Y + 1)
+            MenuStrip1.Location = New Point(MenuStrip1.Location.X, ReportViewer1.Location.Y + 1)
+        End If
+    End Sub
+
+    Private Sub Form1_FormClosing(ByVal sender As Object, ByVal e As System.Windows.Forms.FormClosingEventArgs) Handles Me.FormClosing
+        DeleteFilesFromFolder() 'Clears all .rdl and .rdlc files from the application's folder
     End Sub
 End Class

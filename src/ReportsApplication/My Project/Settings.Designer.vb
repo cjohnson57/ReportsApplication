@@ -15,7 +15,7 @@ Option Explicit On
 Namespace My
     
     <Global.System.Runtime.CompilerServices.CompilerGeneratedAttribute(),  _
-     Global.System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "15.1.0.0"),  _
+     Global.System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "15.9.0.0"),  _
      Global.System.ComponentModel.EditorBrowsableAttribute(Global.System.ComponentModel.EditorBrowsableState.Advanced)>  _
     Partial Friend NotInheritable Class MySettings
         Inherits Global.System.Configuration.ApplicationSettingsBase
@@ -63,44 +63,54 @@ Namespace My
                 Return CType(Me("ConnectionString"),String)
             End Get
         End Property
-
-        <Global.System.Configuration.ApplicationScopedSettingAttribute(),
-         Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),
-         Global.System.Configuration.SpecialSettingAttribute(Global.System.Configuration.SpecialSetting.ConnectionString),
-         Global.System.Configuration.DefaultSettingValueAttribute("Data Source=DEV-SQLSRV;Initial Catalog=CRASH2016;Integrated Security=True")>
-        Public ReadOnly Property ConnectionString1() As String
-            Get
-                Return CType(Me("ConnectionString1"), String)
-            End Get
-        End Property
-
+        
         <Global.System.Configuration.ApplicationScopedSettingAttribute(),  _
          Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
-         Global.System.Configuration.SpecialSettingAttribute(Global.System.Configuration.SpecialSetting.ConnectionString),
-         Global.System.Configuration.DefaultSettingValueAttribute("Data Source=DEV-SQLSRV;Initial Catalog=CRASH2012;Integrated Security=True")>
-        Public ReadOnly Property ConnectionString2() As String
+         Global.System.Configuration.SpecialSettingAttribute(Global.System.Configuration.SpecialSetting.ConnectionString),  _
+         Global.System.Configuration.DefaultSettingValueAttribute("Data Source=DEV-SQLSRV;Initial Catalog=CRASH2013;Integrated Security=True")>  _
+        Public ReadOnly Property CRASH2013ConnectionString() As String
             Get
-                Return CType(Me("ConnectionString2"), String)
+                Return CType(Me("CRASH2013ConnectionString"),String)
             End Get
         End Property
-
-        <Global.System.Configuration.ApplicationScopedSettingAttribute(),
-         Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),
-         Global.System.Configuration.SpecialSettingAttribute(Global.System.Configuration.SpecialSetting.ConnectionString),
-         Global.System.Configuration.DefaultSettingValueAttribute("Data Source=DEV-SQLSRV;Initial Catalog=CRASH2014;Integrated Security=True")>
-        Public ReadOnly Property ConnectionString3() As String
+        
+        <Global.System.Configuration.ApplicationScopedSettingAttribute(),  _
+         Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+         Global.System.Configuration.SpecialSettingAttribute(Global.System.Configuration.SpecialSetting.ConnectionString),  _
+         Global.System.Configuration.DefaultSettingValueAttribute("Data Source=DEV-SQLSRV;Initial Catalog=CRASH2012;Integrated Security=True")>  _
+        Public ReadOnly Property CRASH2012ConnectionString() As String
             Get
-                Return CType(Me("ConnectionString3"), String)
+                Return CType(Me("CRASH2012ConnectionString"),String)
             End Get
         End Property
-
-        <Global.System.Configuration.ApplicationScopedSettingAttribute(),
-         Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),
-         Global.System.Configuration.SpecialSettingAttribute(Global.System.Configuration.SpecialSetting.ConnectionString),
-         Global.System.Configuration.DefaultSettingValueAttribute("Data Source=DEV-SQLSRV;Initial Catalog=CRASHDWHSRG;Integrated Security=True")>
+        
+        <Global.System.Configuration.ApplicationScopedSettingAttribute(),  _
+         Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+         Global.System.Configuration.SpecialSettingAttribute(Global.System.Configuration.SpecialSetting.ConnectionString),  _
+         Global.System.Configuration.DefaultSettingValueAttribute("Data Source=DEV-SQLSRV;Initial Catalog=CRASHDWHSRG;Integrated Security=True")>  _
         Public ReadOnly Property CRASHDWHSRGConnectionString() As String
             Get
-                Return CType(Me("CRASHDWHSRGConnectionString"), String)
+                Return CType(Me("CRASHDWHSRGConnectionString"),String)
+            End Get
+        End Property
+        
+        <Global.System.Configuration.ApplicationScopedSettingAttribute(),  _
+         Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+         Global.System.Configuration.SpecialSettingAttribute(Global.System.Configuration.SpecialSetting.ConnectionString),  _
+         Global.System.Configuration.DefaultSettingValueAttribute("Data Source=DEV-SQLSRV;Initial Catalog=CRASH2014;Integrated Security=True")>  _
+        Public ReadOnly Property CRASH2014ConnectionString() As String
+            Get
+                Return CType(Me("CRASH2014ConnectionString"),String)
+            End Get
+        End Property
+        
+        <Global.System.Configuration.ApplicationScopedSettingAttribute(),  _
+         Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+         Global.System.Configuration.SpecialSettingAttribute(Global.System.Configuration.SpecialSetting.ConnectionString),  _
+         Global.System.Configuration.DefaultSettingValueAttribute("Data Source=DEV-SQLSRV;Initial Catalog=CRASH2016;Integrated Security=True")>  _
+        Public ReadOnly Property CRASH2016ConnectionString() As String
+            Get
+                Return CType(Me("CRASH2016ConnectionString"),String)
             End Get
         End Property
     End Class

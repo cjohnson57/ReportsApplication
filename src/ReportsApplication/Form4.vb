@@ -4,10 +4,10 @@ Public Class Form4
     Private Sub Form3_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         Label1.Text = "Enter the value for parameter " + tempadomdparameter.ParamVar.Replace("@", "")
         Dim firstset As Boolean = True
-        For i As Integer = 0 To (adomdvalues.Count - 1)
-            ComboBox1.Items.Add(adomdvalues(i))
+        For i As Integer = 0 To (adomdlabels.Count - 1)
+            ComboBox1.Items.Add(adomdlabels(i))
             If firstset Then
-                ComboBox1.Text = adomdvalues(i)
+                ComboBox1.Text = adomdlabels(i)
                 firstset = False
             End If
         Next
@@ -19,8 +19,9 @@ Public Class Form4
     End Sub
 
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
-        tempadomdparameter.Parameter = ComboBox1.Items(0).ToString
-        tempadomdparameter.QueryValues = ComboBox1.Items(0).ToString
+        Dim index As Integer = ComboBox1.SelectedIndex
+        tempadomdparameter.Parameter = adomdlabels.ElementAt(index)
+        tempadomdparameter.QueryValues = adomdvalues.ElementAt(index)
         AdomdParameters.Add(tempadomdparameter)
         Close()
     End Sub

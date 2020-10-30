@@ -28,6 +28,10 @@ Partial Class Form1
         Me.ReportViewer1 = New Microsoft.Reporting.WinForms.ReportViewer()
         Me.OpenFileDialog2 = New System.Windows.Forms.OpenFileDialog()
         Me.FolderBrowserDialog1 = New System.Windows.Forms.FolderBrowserDialog()
+        Me.PictureBox1 = New System.Windows.Forms.PictureBox()
+        Me.Button2 = New System.Windows.Forms.Button()
+        Me.FlowLayoutPanel1 = New System.Windows.Forms.FlowLayoutPanel()
+        Me.ListView1 = New System.Windows.Forms.ListView()
         Me.MenuStrip1 = New System.Windows.Forms.MenuStrip()
         Me.ExportToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.PDFToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
@@ -41,15 +45,14 @@ Partial Class Form1
         Me.UseSameValuesForSameParametersToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.CombineMultipleReportsIntoOnePDFOnlyToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.OnlyRenderTheFirstPageOfEachReportToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.PictureBox1 = New System.Windows.Forms.PictureBox()
         Me.FactbookMenuItem = New System.Windows.Forms.ToolStripMenuItem()
-        Me.MenuStrip1.SuspendLayout()
         CType(Me.PictureBox1, System.ComponentModel.ISupportInitialize).BeginInit()
+        Me.MenuStrip1.SuspendLayout()
         Me.SuspendLayout()
         '
         'Button1
         '
-        Me.Button1.Location = New System.Drawing.Point(438, 1)
+        Me.Button1.Location = New System.Drawing.Point(546, 64)
         Me.Button1.Name = "Button1"
         Me.Button1.Size = New System.Drawing.Size(96, 23)
         Me.Button1.TabIndex = 1
@@ -62,18 +65,17 @@ Partial Class Form1
         '
         'ReportViewer1
         '
-        Me.ReportViewer1.AutoSize = True
+        Me.ReportViewer1.Anchor = System.Windows.Forms.AnchorStyles.None
         Me.ReportViewer1.Cursor = System.Windows.Forms.Cursors.Default
-        Me.ReportViewer1.Dock = System.Windows.Forms.DockStyle.Fill
         Me.ReportViewer1.DocumentMapWidth = 1
         Me.ReportViewer1.LocalReport.ReportEmbeddedResource = "ReportsApplication.Report1.rdlc"
-        Me.ReportViewer1.Location = New System.Drawing.Point(0, 0)
+        Me.ReportViewer1.Location = New System.Drawing.Point(126, 63)
         Me.ReportViewer1.Name = "ReportViewer1"
         Me.ReportViewer1.ServerReport.BearerToken = Nothing
         Me.ReportViewer1.ShowBackButton = False
         Me.ReportViewer1.ShowExportButton = False
         Me.ReportViewer1.ShowFindControls = False
-        Me.ReportViewer1.Size = New System.Drawing.Size(837, 929)
+        Me.ReportViewer1.Size = New System.Drawing.Size(882, 872)
         Me.ReportViewer1.TabIndex = 0
         '
         'OpenFileDialog2
@@ -81,14 +83,50 @@ Partial Class Form1
         Me.OpenFileDialog2.Multiselect = True
         Me.OpenFileDialog2.Title = "Select Reports"
         '
+        'PictureBox1
+        '
+        Me.PictureBox1.Image = CType(resources.GetObject("PictureBox1.Image"), System.Drawing.Image)
+        Me.PictureBox1.Location = New System.Drawing.Point(434, 444)
+        Me.PictureBox1.Name = "PictureBox1"
+        Me.PictureBox1.Size = New System.Drawing.Size(300, 100)
+        Me.PictureBox1.TabIndex = 10
+        Me.PictureBox1.TabStop = False
+        Me.PictureBox1.Visible = False
+        '
+        'Button2
+        '
+        Me.Button2.Location = New System.Drawing.Point(648, 64)
+        Me.Button2.Name = "Button2"
+        Me.Button2.Size = New System.Drawing.Size(49, 23)
+        Me.Button2.TabIndex = 11
+        Me.Button2.Text = "RUN"
+        Me.Button2.UseVisualStyleBackColor = True
+        '
+        'FlowLayoutPanel1
+        '
+        Me.FlowLayoutPanel1.Location = New System.Drawing.Point(1, -3)
+        Me.FlowLayoutPanel1.Name = "FlowLayoutPanel1"
+        Me.FlowLayoutPanel1.Size = New System.Drawing.Size(1007, 65)
+        Me.FlowLayoutPanel1.TabIndex = 12
+        '
+        'ListView1
+        '
+        Me.ListView1.HideSelection = False
+        Me.ListView1.Location = New System.Drawing.Point(1, 63)
+        Me.ListView1.Name = "ListView1"
+        Me.ListView1.Size = New System.Drawing.Size(125, 872)
+        Me.ListView1.TabIndex = 13
+        Me.ListView1.UseCompatibleStateImageBehavior = False
+        Me.ListView1.View = System.Windows.Forms.View.List
+        '
         'MenuStrip1
         '
         Me.MenuStrip1.Dock = System.Windows.Forms.DockStyle.None
         Me.MenuStrip1.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.ExportToolStripMenuItem, Me.ExportToolStripMenuItem1, Me.ExportOptionsToolStripMenuItem})
-        Me.MenuStrip1.Location = New System.Drawing.Point(537, 1)
+        Me.MenuStrip1.Location = New System.Drawing.Point(700, 63)
         Me.MenuStrip1.Name = "MenuStrip1"
         Me.MenuStrip1.Size = New System.Drawing.Size(307, 24)
-        Me.MenuStrip1.TabIndex = 9
+        Me.MenuStrip1.TabIndex = 14
         Me.MenuStrip1.Text = "MenuStrip1"
         '
         'ExportToolStripMenuItem
@@ -101,19 +139,19 @@ Partial Class Form1
         'PDFToolStripMenuItem
         '
         Me.PDFToolStripMenuItem.Name = "PDFToolStripMenuItem"
-        Me.PDFToolStripMenuItem.Size = New System.Drawing.Size(180, 22)
+        Me.PDFToolStripMenuItem.Size = New System.Drawing.Size(103, 22)
         Me.PDFToolStripMenuItem.Text = "PDF"
         '
         'ExcelToolStripMenuItem
         '
         Me.ExcelToolStripMenuItem.Name = "ExcelToolStripMenuItem"
-        Me.ExcelToolStripMenuItem.Size = New System.Drawing.Size(180, 22)
+        Me.ExcelToolStripMenuItem.Size = New System.Drawing.Size(103, 22)
         Me.ExcelToolStripMenuItem.Text = "Excel"
         '
         'WordToolStripMenuItem
         '
         Me.WordToolStripMenuItem.Name = "WordToolStripMenuItem"
-        Me.WordToolStripMenuItem.Size = New System.Drawing.Size(180, 22)
+        Me.WordToolStripMenuItem.Size = New System.Drawing.Size(103, 22)
         Me.WordToolStripMenuItem.Text = "Word"
         '
         'ExportToolStripMenuItem1
@@ -172,39 +210,32 @@ Partial Class Form1
         Me.OnlyRenderTheFirstPageOfEachReportToolStripMenuItem.Size = New System.Drawing.Size(285, 22)
         Me.OnlyRenderTheFirstPageOfEachReportToolStripMenuItem.Text = "Only render the first page of each report"
         '
-        'PictureBox1
-        '
-        Me.PictureBox1.Image = CType(resources.GetObject("PictureBox1.Image"), System.Drawing.Image)
-        Me.PictureBox1.Location = New System.Drawing.Point(268, 414)
-        Me.PictureBox1.Name = "PictureBox1"
-        Me.PictureBox1.Size = New System.Drawing.Size(300, 100)
-        Me.PictureBox1.TabIndex = 10
-        Me.PictureBox1.TabStop = False
-        Me.PictureBox1.Visible = False
-        '
         'FactbookMenuItem
         '
+        Me.FactbookMenuItem.CheckOnClick = True
         Me.FactbookMenuItem.Name = "FactbookMenuItem"
         Me.FactbookMenuItem.Size = New System.Drawing.Size(372, 22)
         Me.FactbookMenuItem.Text = "Export Factbook"
-        Me.FactbookMenuItem.CheckOnClick = True
         '
         'Form1
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(837, 929)
-        Me.Controls.Add(Me.PictureBox1)
+        Me.ClientSize = New System.Drawing.Size(1009, 943)
         Me.Controls.Add(Me.MenuStrip1)
+        Me.Controls.Add(Me.ListView1)
+        Me.Controls.Add(Me.FlowLayoutPanel1)
+        Me.Controls.Add(Me.Button2)
+        Me.Controls.Add(Me.PictureBox1)
         Me.Controls.Add(Me.Button1)
         Me.Controls.Add(Me.ReportViewer1)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.Name = "Form1"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
         Me.Text = "Report Viewer"
+        CType(Me.PictureBox1, System.ComponentModel.ISupportInitialize).EndInit()
         Me.MenuStrip1.ResumeLayout(False)
         Me.MenuStrip1.PerformLayout()
-        CType(Me.PictureBox1, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -214,19 +245,22 @@ Partial Class Form1
     Friend WithEvents ReportViewer1 As Microsoft.Reporting.WinForms.ReportViewer
     Friend WithEvents OpenFileDialog2 As OpenFileDialog
     Friend WithEvents FolderBrowserDialog1 As FolderBrowserDialog
+    Friend WithEvents PictureBox1 As PictureBox
+    Friend WithEvents Button2 As Button
+    Friend WithEvents FlowLayoutPanel1 As FlowLayoutPanel
+    Friend WithEvents ListView1 As ListView
     Friend WithEvents MenuStrip1 As MenuStrip
     Friend WithEvents ExportToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents PDFToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents ExcelToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents WordToolStripMenuItem As ToolStripMenuItem
-    Friend WithEvents ExportOptionsToolStripMenuItem As ToolStripMenuItem
-    Friend WithEvents UseSameValuesForSameParametersToolStripMenuItem As ToolStripMenuItem
-    Friend WithEvents CombineMultipleReportsIntoOnePDFOnlyToolStripMenuItem As ToolStripMenuItem
-    Friend WithEvents OnlyRenderTheFirstPageOfEachReportToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents ExportToolStripMenuItem1 As ToolStripMenuItem
     Friend WithEvents PDFToolStripMenuItem1 As ToolStripMenuItem
     Friend WithEvents ExcelToolStripMenuItem1 As ToolStripMenuItem
     Friend WithEvents WordToolStripMenuItem1 As ToolStripMenuItem
-    Friend WithEvents PictureBox1 As PictureBox
+    Friend WithEvents ExportOptionsToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents UseSameValuesForSameParametersToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents CombineMultipleReportsIntoOnePDFOnlyToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents OnlyRenderTheFirstPageOfEachReportToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents FactbookMenuItem As ToolStripMenuItem
 End Class
