@@ -163,7 +163,7 @@
           <Paragraph>
             <TextRuns>
               <TextRun>
-                <Value>Furthermore, there are several options available in the App.config file:</Value>
+                <Value>Furthermore, there are several options available in the .config file:</Value>
                 <Style>
                   <FontSize>12pt</FontSize>
                 </Style>

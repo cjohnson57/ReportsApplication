@@ -130,9 +130,6 @@ Public Class Form1
         SetData(False, Me.filename) 'Sets the parameters, adds data sets, replaces fields, renders report
         Text = "Report Viewer - " + Me.filename 'Places the name of the report in the control's title bar
         ReportViewer1.RefreshReport() 'Used to show the new report
-        If System.Configuration.ConfigurationSettings.AppSettings.Get("MODE") <> "Viewer" Then
-            ReportViewer1.RefreshReport() 'Used to show the new report
-        End If
     End Sub
 
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
@@ -149,6 +146,7 @@ Public Class Form1
             DeleteFilesFromFolder() 'Clears all .rdl and .rdlc files from the application's folder
         End If
         PictureBox1.Visible = False 'Hides loading icon
+        Button2.Enabled = True
     End Sub
 
     Private Sub SetData(saveparameters As Boolean, filename As String)
@@ -186,18 +184,18 @@ Public Class Form1
                     tempdatasource.IsAnalysis = True
                 End If
 
+                Dim AlreadyIntegrated As Boolean = tempdatasource.ConnectionString.Contains("Integrated Security")
+                Dim SecurityTypeIntegrated As Boolean = FindString("<rd:SecurityType", "</rd:SecurityType", i) = "Integrated" And (Not tempdatasource.IsAnalysis)
+                Dim UserSet As Boolean = Not String.IsNullOrEmpty((System.Configuration.ConfigurationSettings.AppSettings.Get("user")).ToString())
+                Dim PasswordSet As Boolean = Not String.IsNullOrEmpty(System.Configuration.ConfigurationSettings.AppSettings.Get("pwd").ToString())
 
-                If Not (String.IsNullOrEmpty((System.Configuration.ConfigurationSettings.AppSettings.Get("user")).ToString()) And
-                String.IsNullOrEmpty(System.Configuration.ConfigurationSettings.AppSettings.Get("pwd").ToString())) Then
+
+                If (Not AlreadyIntegrated Or FactbookMenuItem.Checked) And UserSet And PasswordSet Then
                     tempdatasource.ConnectionString += ";UID=" + System.Configuration.ConfigurationSettings.AppSettings.Get("user").ToString() + ";PWD=" + System.Configuration.ConfigurationSettings.AppSettings.Get("pwd").ToString()
-
-
-
-                Else
-                    If (FindString("<rd:SecurityType", "</rd:SecurityType", i) = "Integrated" And (Not tempdatasource.ConnectionString.Contains("Integrated Security")) And (Not tempdatasource.IsAnalysis)) Then 'Adds integrated security if it's not already there, unless it's analysis services, which doesn't need it
-                        tempdatasource.ConnectionString += ";Integrated Security=True"
-                    End If
+                ElseIf Not AlreadyIntegrated And SecurityTypeIntegrated Then
+                    tempdatasource.ConnectionString += ";Integrated Security=True"
                 End If
+
                 tempdatasource.Name = FindDataSourceName(i, True)
                 DataSources.Add(tempdatasource)
                 count += 1
@@ -381,13 +379,17 @@ Public Class Form1
             i += 1 'Increments i by 1 for the next data set
         Next
 
-        report.Save(filename) 'Saves the new, changed report and switches the report to it
-        ReportViewer1.LocalReport.ReportPath = filename
+        If (Not Directory.Exists("TempFiles")) Then
+            Directory.CreateDirectory("TempFiles")
+        End If
+
+        report.Save("TempFiles/" + filename) 'Saves the new, changed report and switches the report to it
+        ReportViewer1.LocalReport.ReportPath = "TempFiles/" + filename
 
         SetParameterDataTypes() 'Changes the parameters to use the datatype specified in the original report, since parameters added with code are type string by default
 
-        report.Save(filename) 'Saves the new, changed report and switches the report to it
-        ReportViewer1.LocalReport.ReportPath = filename
+        report.Save("TempFiles/" + filename) 'Saves the new, changed report and switches the report to it
+        ReportViewer1.LocalReport.ReportPath = "TempFiles/" + filename
 
         If (SQLParameters.Count() > 0) Then 'If there are sql parameters, adds them to the report (they have to be added to the report separately from the dataset)
             For l As Integer = 0 To (SQLParameters.Count() - 1)
@@ -1090,7 +1092,7 @@ Public Class Form1
     End Function
 
     Private Sub DeleteFilesFromFolder() 'Deletes files from the program folder so they're not left over
-        For Each fil As String In Directory.GetFiles(Application.StartupPath)
+        For Each fil As String In Directory.GetFiles(Application.StartupPath + "/TempFiles")
             If ((Path.GetExtension(fil) = ".rdl") Or (Path.GetExtension(fil) = ".rdlc") And Not fil.Contains(System.Configuration.ConfigurationSettings.AppSettings.Get("Default Report"))) Then  'Checks extension and that it's not the default report
                 File.Delete(fil)
             End If
@@ -1307,6 +1309,7 @@ Public Class Form1
         ListView1.Height = ReportViewer1.Height
         If System.Configuration.ConfigurationSettings.AppSettings.Get("MODE") = "Viewer" Then
             MenuStrip1.Items(0).Visible = False
+            MenuStrip1.Items(2).Visible = False
         Else
             Button2.Visible = False
         End If

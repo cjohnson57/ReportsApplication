@@ -95,6 +95,7 @@ Partial Class Form1
         '
         'Button2
         '
+        Me.Button2.Enabled = False
         Me.Button2.Location = New System.Drawing.Point(648, 64)
         Me.Button2.Name = "Button2"
         Me.Button2.Size = New System.Drawing.Size(49, 23)
@@ -125,7 +126,7 @@ Partial Class Form1
         Me.MenuStrip1.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.ExportToolStripMenuItem, Me.ExportToolStripMenuItem1, Me.ExportOptionsToolStripMenuItem})
         Me.MenuStrip1.Location = New System.Drawing.Point(700, 63)
         Me.MenuStrip1.Name = "MenuStrip1"
-        Me.MenuStrip1.Size = New System.Drawing.Size(307, 24)
+        Me.MenuStrip1.Size = New System.Drawing.Size(310, 24)
         Me.MenuStrip1.TabIndex = 14
         Me.MenuStrip1.Text = "MenuStrip1"
         '
@@ -133,7 +134,7 @@ Partial Class Form1
         '
         Me.ExportToolStripMenuItem.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.PDFToolStripMenuItem, Me.ExcelToolStripMenuItem, Me.WordToolStripMenuItem})
         Me.ExportToolStripMenuItem.Name = "ExportToolStripMenuItem"
-        Me.ExportToolStripMenuItem.Size = New System.Drawing.Size(107, 20)
+        Me.ExportToolStripMenuItem.Size = New System.Drawing.Size(108, 20)
         Me.ExportToolStripMenuItem.Text = "Open and Export"
         '
         'PDFToolStripMenuItem
@@ -158,7 +159,7 @@ Partial Class Form1
         '
         Me.ExportToolStripMenuItem1.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.PDFToolStripMenuItem1, Me.ExcelToolStripMenuItem1, Me.WordToolStripMenuItem1})
         Me.ExportToolStripMenuItem1.Name = "ExportToolStripMenuItem1"
-        Me.ExportToolStripMenuItem1.Size = New System.Drawing.Size(95, 20)
+        Me.ExportToolStripMenuItem1.Size = New System.Drawing.Size(96, 20)
         Me.ExportToolStripMenuItem1.Text = "Export Current"
         '
         'PDFToolStripMenuItem1
@@ -183,7 +184,7 @@ Partial Class Form1
         '
         Me.ExportOptionsToolStripMenuItem.DropDownItems.AddRange(New System.Windows.Forms.ToolStripItem() {Me.UseSameValuesForSameParametersToolStripMenuItem, Me.CombineMultipleReportsIntoOnePDFOnlyToolStripMenuItem, Me.FactbookMenuItem})
         Me.ExportOptionsToolStripMenuItem.Name = "ExportOptionsToolStripMenuItem"
-        Me.ExportOptionsToolStripMenuItem.Size = New System.Drawing.Size(97, 20)
+        Me.ExportOptionsToolStripMenuItem.Size = New System.Drawing.Size(98, 20)
         Me.ExportOptionsToolStripMenuItem.Text = "Export Options"
         '
         'UseSameValuesForSameParametersToolStripMenuItem
